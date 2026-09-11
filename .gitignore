@@ -1,0 +1,62 @@
+# ---- Qt / C++ build artifacts ----
+build/
+build-*/
+*-build-*/
+*.pro.user
+*.pro.user.*
+.qmake.stash
+*.qmlc
+*.jsc
+
+# Compiled objects / binaries
+*.o
+*.obj
+*.exe
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+*.pdb
+
+# Qt generated sources
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+
+# qmake / make / cmake
+Makefile
+Makefile.*
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CMakeUserPresets.json
+install_manifest.txt
+compile_commands.json
+
+# Debug / release outputs
+debug/
+release/
+*.Debug
+*.Release
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*.autosave
+
+# ---- OS ----
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ---- Local tooling ----
+.codegraph/
+.omo/
+
+# ---- Secrets (never commit) ----
+*.env
+secrets.*
