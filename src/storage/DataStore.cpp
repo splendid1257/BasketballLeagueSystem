@@ -381,8 +381,27 @@ bool DataStore::removePlayerFromMatch(const QString &matchId, int teamNo, const 
     return false;
 }
 
-// ---------------------------------------------------------------- stats
+bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QString &playerId,
+                                  const PlayerStats &s)
+{
+    for (Match &m : m_matches) {
+        if (m.id != matchId)
+            continue;
+        QVector<PlayerStats> &list = (teamNo == 1) ? m.team1Players : m.team2Players;
+        for (PlayerStats &existing : list) {
+            if (existing.playerId == playerId) {
+                existing = s;
+                save();
+                emit changed();
+                return true;
+            }
+        }
+        return false;
+    }
+    return false;
+}
 
+// ---------------------------------------------------------------- stats
 PlayerStats DataStore::careerTotals(const QString &playerId) const
 {
     PlayerStats total;

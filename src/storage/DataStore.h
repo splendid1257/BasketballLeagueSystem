@@ -44,6 +44,9 @@ public:
     // 向某场次的某支球队增/删参赛队员；teamNo 为 1 或 2
     bool addPlayerToMatch(const QString &matchId, int teamNo, const PlayerStats &s);
     bool removePlayerFromMatch(const QString &matchId, int teamNo, const QString &playerId);
+    // 修改某场次中某球员的数据
+    bool updatePlayerStats(const QString &matchId, int teamNo, const QString &playerId,
+                           const PlayerStats &s);
 
     // ---------------- 统计聚合 ----------------
     // 球员生涯合计（跨所有场次）
