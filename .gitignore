@@ -44,6 +44,9 @@ release/
 # ---- IDE / editor ----
 .vscode/
 .idea/
+.qtcreator/
+*.user
+*.user.*
 *.swp
 *.swo
 *.autosave
