@@ -20,6 +20,9 @@ public slots:
 
 private:
     void onTeamSelected();
+    void onAddTeam();
+    void onEditTeam();
+    void onDeleteTeam();
 
     DataStore *m_store = nullptr;
     QListWidget *m_teamList = nullptr;

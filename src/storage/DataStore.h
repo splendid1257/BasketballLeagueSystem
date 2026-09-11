@@ -7,6 +7,7 @@
 
 #include "model/Match.h"
 #include "model/Player.h"
+#include "model/Team.h"
 #include "model/User.h"
 
 // 数据仓储：负责所有实体的增删改查 + 文件读写（JSON）
@@ -31,7 +32,15 @@ public:
     bool updatePlayer(const QString &oldId, const Player &p);
     bool removePlayer(const QString &id);
     Player findPlayer(const QString &id) const;  // 不存在返回默认对象
-    QStringList teams() const;                   // 去重后的球队列表
+    QStringList teams() const;  // 全部球队名（球队档案 + 球员所属，去重排序）
+
+    // ---------------- 球队 ----------------
+    const QVector<Team> &teamRecords() const { return m_teams; }
+    bool teamExists(const QString &name) const;
+    bool addTeam(const Team &t);
+    bool updateTeam(const QString &oldName, const Team &t);
+    bool removeTeam(const QString &name);
+    Team findTeam(const QString &name) const;  // 不存在返回默认对象
 
     // ---------------- 场次 ----------------
     const QVector<Match> &matches() const { return m_matches; }
@@ -73,16 +82,19 @@ signals:
 private:
     bool loadPlayers();
     bool loadMatches();
+    bool loadTeams();
     bool loadUsers();
     void seedDemoData();
     void ensureDataDir();
 
     QVector<Player> m_players;
     QVector<Match> m_matches;
+    QVector<Team> m_teams;
     QVector<User> m_users;
 
     QString m_dataDir;
     QString m_playersFile;
     QString m_matchesFile;
+    QString m_teamsFile;
     QString m_usersFile;
 };

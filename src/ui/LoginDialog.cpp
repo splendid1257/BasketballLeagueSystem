@@ -42,37 +42,37 @@ LoginDialog::LoginDialog(AuthManager *auth, QWidget *parent)
 QWidget *LoginDialog::buildBrandPanel()
 {
     auto *panel = new QFrame(this);
-    panel->setFixedWidth(320);
+    panel->setFixedWidth(240);
     panel->setStyleSheet(QStringLiteral(
         "background: qlineargradient(x1:0,y1:0,x2:0,y2:1, stop:0 #C8102E, stop:1 #6E0A1C);"
         "border-top-left-radius:0px;"));
 
     auto *v = new QVBoxLayout(panel);
-    v->setContentsMargins(34, 40, 34, 34);
-    v->setSpacing(14);
+    v->setContentsMargins(26, 34, 26, 26);
+    v->setSpacing(12);
 
     auto *logo = new QLabel(QStringLiteral("🏀"), panel);
-    logo->setStyleSheet(QStringLiteral("font-size:54px; background:transparent;"));
+    logo->setStyleSheet(QStringLiteral("font-size:44px; background:transparent;"));
     v->addWidget(logo);
 
     auto *title = new QLabel(QStringLiteral("篮球联赛\n管理系统"), panel);
-    title->setStyleSheet(QStringLiteral("font-size:30px; font-weight:800; color:#FFFFFF; background:transparent;"));
+    title->setStyleSheet(QStringLiteral("font-size:24px; font-weight:800; color:#FFFFFF; background:transparent;"));
     v->addWidget(title);
 
     auto *line = new QFrame(panel);
     line->setFixedHeight(3);
-    line->setFixedWidth(60);
+    line->setFixedWidth(48);
     line->setStyleSheet(QStringLiteral("background:#FDB927; border-radius:2px;"));
     v->addWidget(line);
 
     auto *desc = new QLabel(QStringLiteral("Basketball League\nManagement System"), panel);
-    desc->setStyleSheet(QStringLiteral("color:#FFD9DE; font-size:13px; letter-spacing:1px; background:transparent;"));
+    desc->setStyleSheet(QStringLiteral("color:#FFD9DE; font-size:12px; letter-spacing:1px; background:transparent;"));
     v->addWidget(desc);
 
     v->addStretch();
 
     auto *foot = new QLabel(QStringLiteral("C++ / Qt6 · 课程设计"), panel);
-    foot->setStyleSheet(QStringLiteral("color:#FFB8C1; font-size:12px; background:transparent;"));
+    foot->setStyleSheet(QStringLiteral("color:#FFB8C1; font-size:11px; background:transparent;"));
     v->addWidget(foot);
     return panel;
 }

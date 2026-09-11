@@ -1,12 +1,15 @@
 #include "ui/pages/TeamsPage.h"
 
 #include "storage/DataStore.h"
+#include "ui/dialogs/TeamEditDialog.h"
 #include "ui/widgets/UiUtils.h"
 
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -20,7 +23,7 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
 
     auto *title = new QLabel(QStringLiteral("球队与花名册"), this);
     title->setObjectName(QStringLiteral("H1"));
-    auto *sub = new QLabel(QStringLiteral("选择球队，查看该队全部球员信息"), this);
+    auto *sub = new QLabel(QStringLiteral("管理球队档案，选择球队查看该队全部球员信息"), this);
     sub->setObjectName(QStringLiteral("Muted"));
     root->addWidget(title);
     root->addWidget(sub);
@@ -28,19 +31,37 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     auto *columns = new QHBoxLayout();
     columns->setSpacing(16);
 
-    // 左：球队列表
+    // 左：球队列表 + 管理按钮
     auto *leftCard = new QFrame(this);
     leftCard->setObjectName(QStringLiteral("Card"));
-    leftCard->setFixedWidth(260);
+    leftCard->setFixedWidth(268);
     auto *lv = new QVBoxLayout(leftCard);
     lv->setContentsMargins(14, 14, 14, 14);
     lv->setSpacing(10);
+
+    auto *lHead = new QHBoxLayout();
     auto *lTitle = new QLabel(QStringLiteral("球队"), leftCard);
     lTitle->setObjectName(QStringLiteral("H3"));
+    auto *addBtn = new QPushButton(QStringLiteral("＋ 新增球队"), leftCard);
+    addBtn->setObjectName(QStringLiteral("Primary"));
+    addBtn->setCursor(Qt::PointingHandCursor);
+    lHead->addWidget(lTitle);
+    lHead->addStretch();
+    lHead->addWidget(addBtn);
+    lv->addLayout(lHead);
+
     m_teamList = new QListWidget(leftCard);
     m_teamList->setObjectName(QStringLiteral("TeamList"));
-    lv->addWidget(lTitle);
     lv->addWidget(m_teamList, 1);
+
+    auto *lActions = new QHBoxLayout();
+    lActions->setSpacing(8);
+    auto *editBtn = new QPushButton(QStringLiteral("编辑球队"), leftCard);
+    auto *delBtn = new QPushButton(QStringLiteral("删除球队"), leftCard);
+    delBtn->setObjectName(QStringLiteral("Danger"));
+    lActions->addWidget(editBtn);
+    lActions->addWidget(delBtn);
+    lv->addLayout(lActions);
     columns->addWidget(leftCard);
 
     // 右：花名册
@@ -53,6 +74,7 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     m_teamTitle->setObjectName(QStringLiteral("H2"));
     m_teamMeta = new QLabel(QStringLiteral("请选择左侧球队"), rightCard);
     m_teamMeta->setObjectName(QStringLiteral("Muted"));
+    m_teamMeta->setWordWrap(true);
     m_roster = new QTableWidget(rightCard);
     ui::setupTable(m_roster, {QStringLiteral("编号"), QStringLiteral("姓名"),
                               QStringLiteral("号码"), QStringLiteral("位置"),
@@ -71,6 +93,9 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     root->addLayout(columns, 1);
 
     connect(m_teamList, &QListWidget::currentRowChanged, this, [this](int) { onTeamSelected(); });
+    connect(addBtn, &QPushButton::clicked, this, &TeamsPage::onAddTeam);
+    connect(editBtn, &QPushButton::clicked, this, &TeamsPage::onEditTeam);
+    connect(delBtn, &QPushButton::clicked, this, &TeamsPage::onDeleteTeam);
     connect(m_store, &DataStore::changed, this, &TeamsPage::refresh);
 
     refresh();
@@ -93,12 +118,11 @@ void TeamsPage::refresh()
 
     if (m_teamList->count() == 0) {
         m_teamTitle->setText(QStringLiteral("花名册"));
-        m_teamMeta->setText(QStringLiteral("暂无球队，请先在球员管理中添加球员并填写所属球队"));
+        m_teamMeta->setText(QStringLiteral("暂无球队，点击左上角「＋ 新增球队」创建"));
         m_roster->setRowCount(0);
         return;
     }
 
-    // 恢复之前选中的球队
     int row = 0;
     for (int i = 0; i < m_teamList->count(); ++i) {
         if (m_teamList->item(i)->data(Qt::UserRole).toString() == previous) {
@@ -129,9 +153,18 @@ void TeamsPage::onTeamSelected()
     int totalPoints = 0;
     for (const Player &p : roster)
         totalPoints += m_store->careerTotals(p.id).points();
-    m_teamMeta->setText(QStringLiteral("共 %1 名球员 · 生涯合计 %2 分")
-                            .arg(roster.size())
-                            .arg(totalPoints));
+
+    const Team info = m_store->findTeam(team);
+    QStringList bits;
+    if (!info.city.isEmpty())
+        bits << QStringLiteral("城市 %1").arg(info.city);
+    if (!info.coach.isEmpty())
+        bits << QStringLiteral("主教练 %1").arg(info.coach);
+    if (!info.arena.isEmpty())
+        bits << QStringLiteral("主场 %1").arg(info.arena);
+    bits << QStringLiteral("共 %1 名球员").arg(roster.size());
+    bits << QStringLiteral("生涯合计 %1 分").arg(totalPoints);
+    m_teamMeta->setText(bits.join(QStringLiteral(" · ")));
 
     m_roster->setRowCount(roster.size());
     for (int r = 0; r < roster.size(); ++r) {
@@ -150,4 +183,68 @@ void TeamsPage::onTeamSelected()
         m_roster->setItem(r, 8, ui::item(QString::number(games)));
         m_roster->setItem(r, 9, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
     }
+}
+
+void TeamsPage::onAddTeam()
+{
+    TeamEditDialog dlg(this);
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    const Team t = dlg.team();
+    if (m_store->teamExists(t.name)) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+                             QStringLiteral("球队「%1」已存在").arg(t.name));
+        return;
+    }
+    if (!m_store->addTeam(t))
+        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("新增失败"));
+}
+
+void TeamsPage::onEditTeam()
+{
+    auto *current = m_teamList->currentItem();
+    if (!current) {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("请先选中一支球队"));
+        return;
+    }
+    const QString name = current->data(Qt::UserRole).toString();
+    TeamEditDialog dlg(this);
+    dlg.setTeam(m_store->findTeam(name));
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    const Team t = dlg.team();
+    if (t.name != name && m_store->teamExists(t.name)) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+                             QStringLiteral("球队「%1」已存在").arg(t.name));
+        return;
+    }
+    if (!m_store->updateTeam(name, t))
+        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
+}
+
+void TeamsPage::onDeleteTeam()
+{
+    auto *current = m_teamList->currentItem();
+    if (!current) {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("请先选中一支球队"));
+        return;
+    }
+    const QString name = current->data(Qt::UserRole).toString();
+
+    int count = 0;
+    for (const Player &p : m_store->players())
+        if (p.team == name)
+            ++count;
+    if (count > 0) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+                             QStringLiteral("球队「%1」下还有 %2 名球员，请先在「球员管理」中改派或删除后再删除球队。")
+                                 .arg(name)
+                                 .arg(count));
+        return;
+    }
+    if (QMessageBox::question(this, QStringLiteral("确认"),
+                              QStringLiteral("确定删除球队「%1」吗？").arg(name))
+        != QMessageBox::Yes)
+        return;
+    m_store->removeTeam(name);
 }

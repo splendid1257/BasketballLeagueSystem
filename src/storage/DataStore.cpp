@@ -98,6 +98,7 @@ void DataStore::ensureDataDir()
     QDir().mkpath(m_dataDir);
     m_playersFile = m_dataDir + QStringLiteral("/players.json");
     m_matchesFile = m_dataDir + QStringLiteral("/matches.json");
+    m_teamsFile = m_dataDir + QStringLiteral("/teams.json");
     m_usersFile = m_dataDir + QStringLiteral("/users.json");
 }
 
@@ -108,11 +109,24 @@ bool DataStore::load()
 
     loadPlayers();
     loadMatches();
+    loadTeams();
     loadUsers();
 
     if (fresh && m_matches.isEmpty()) {
         seedDemoData();
         save();
+    } else if (m_teams.isEmpty()) {
+        // 迁移：旧数据没有球队档案时，从球员所属球队补齐
+        for (const Player &p : m_players) {
+            const QString n = p.team.trimmed();
+            if (!n.isEmpty() && !teamExists(n)) {
+                Team t;
+                t.name = n;
+                m_teams.append(t);
+            }
+        }
+        if (!m_teams.isEmpty())
+            save();
     }
     return true;
 }
@@ -147,6 +161,16 @@ bool DataStore::save() const
         matchesArr.append(o);
     }
 
+    QJsonArray teamsArr;
+    for (const Team &t : m_teams) {
+        QJsonObject o;
+        o["name"] = t.name;
+        o["city"] = t.city;
+        o["coach"] = t.coach;
+        o["arena"] = t.arena;
+        teamsArr.append(o);
+    }
+
     QJsonArray usersArr;
     for (const User &u : m_users) {
         QJsonObject o;
@@ -158,6 +182,7 @@ bool DataStore::save() const
 
     const bool ok = writeJsonArray(m_playersFile, playersArr)
                     && writeJsonArray(m_matchesFile, matchesArr)
+                    && writeJsonArray(m_teamsFile, teamsArr)
                     && writeJsonArray(m_usersFile, usersArr);
     return ok;
 }
@@ -198,6 +223,22 @@ bool DataStore::loadMatches()
         m.team2Players = statsArrayFromJson(o["team2Players"].toArray());
         if (m.isValid())
             m_matches.append(m);
+    }
+    return true;
+}
+
+bool DataStore::loadTeams()
+{
+    m_teams.clear();
+    for (const QJsonValue &v : readJsonArray(m_teamsFile)) {
+        const QJsonObject o = v.toObject();
+        Team t;
+        t.name = o["name"].toString();
+        t.city = o["city"].toString();
+        t.coach = o["coach"].toString();
+        t.arena = o["arena"].toString();
+        if (t.isValid())
+            m_teams.append(t);
     }
     return true;
 }
@@ -292,6 +333,11 @@ Player DataStore::findPlayer(const QString &id) const
 QStringList DataStore::teams() const
 {
     QStringList list;
+    for (const Team &t : m_teams) {
+        const QString n = t.name.trimmed();
+        if (!n.isEmpty() && !list.contains(n))
+            list.append(n);
+    }
     for (const Player &p : m_players) {
         const QString t = p.team.trimmed();
         if (!t.isEmpty() && !list.contains(t))
@@ -299,6 +345,69 @@ QStringList DataStore::teams() const
     }
     list.sort();
     return list;
+}
+
+// ---------------------------------------------------------------- teams
+
+bool DataStore::teamExists(const QString &name) const
+{
+    return std::any_of(m_teams.cbegin(), m_teams.cend(),
+                       [&name](const Team &t) { return t.name == name; });
+}
+
+bool DataStore::addTeam(const Team &t)
+{
+    if (!t.isValid() || teamExists(t.name))
+        return false;
+    m_teams.append(t);
+    save();
+    emit changed();
+    return true;
+}
+
+bool DataStore::updateTeam(const QString &oldName, const Team &t)
+{
+    for (Team &existing : m_teams) {
+        if (existing.name == oldName) {
+            if (t.name != oldName && teamExists(t.name))
+                return false;
+            existing = t;
+            // 级联：同步球员所属球队与场次中的队名
+            for (Player &p : m_players)
+                if (p.team == oldName)
+                    p.team = t.name;
+            for (Match &m : m_matches) {
+                if (m.team1Name == oldName)
+                    m.team1Name = t.name;
+                if (m.team2Name == oldName)
+                    m.team2Name = t.name;
+            }
+            save();
+            emit changed();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool DataStore::removeTeam(const QString &name)
+{
+    const auto it = std::find_if(m_teams.begin(), m_teams.end(),
+                                 [&name](const Team &t) { return t.name == name; });
+    if (it == m_teams.end())
+        return false;
+    m_teams.erase(it);
+    save();
+    emit changed();
+    return true;
+}
+
+Team DataStore::findTeam(const QString &name) const
+{
+    for (const Team &t : m_teams)
+        if (t.name == name)
+            return t;
+    return {};
 }
 
 // ---------------------------------------------------------------- matches
@@ -507,6 +616,15 @@ User DataStore::findUser(const QString &username) const
 
 void DataStore::seedDemoData()
 {
+    const Team teams[] = {
+        {QStringLiteral("洛杉矶湖人"), QStringLiteral("洛杉矶"), QStringLiteral("JJ·雷迪克"), QStringLiteral("斯台普斯中心")},
+        {QStringLiteral("波士顿凯尔特人"), QStringLiteral("波士顿"), QStringLiteral("乔·马祖拉"), QStringLiteral("TD花园")},
+        {QStringLiteral("金州勇士"), QStringLiteral("旧金山"), QStringLiteral("史蒂夫·科尔"), QStringLiteral("大通中心")},
+        {QStringLiteral("芝加哥公牛"), QStringLiteral("芝加哥"), QStringLiteral("比利·多诺万"), QStringLiteral("联合中心")},
+    };
+    for (const Team &t : teams)
+        m_teams.append(t);
+
     const Player players[] = {
         {"L001", QStringLiteral("勒布朗·詹姆斯"), 39, QStringLiteral("洛杉矶湖人"), 23, QStringLiteral("SF"), 206, 113, QStringLiteral("美国")},
         {"L002", QStringLiteral("安东尼·戴维斯"), 31, QStringLiteral("洛杉矶湖人"), 3, QStringLiteral("PF"), 208, 115, QStringLiteral("美国")},
