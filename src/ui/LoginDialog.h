@@ -23,6 +23,7 @@ private:
     QWidget *buildRegisterForm();
     void doLogin();
     void doRegister();
+    bool validateRegister();  // 实时校验注册表单；完全合法返回 true
 
     AuthManager *m_auth = nullptr;
     QStackedWidget *m_stack = nullptr;

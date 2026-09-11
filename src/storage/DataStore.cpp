@@ -512,7 +512,7 @@ void DataStore::seedDemoData()
         {"L002", QStringLiteral("安东尼·戴维斯"), 31, QStringLiteral("洛杉矶湖人"), 3, QStringLiteral("PF"), 208, 115, QStringLiteral("美国")},
         {"L003", QStringLiteral("奥斯汀·里夫斯"), 26, QStringLiteral("洛杉矶湖人"), 15, QStringLiteral("SG"), 196, 89, QStringLiteral("美国")},
         {"L004", QStringLiteral("八村塁"), 26, QStringLiteral("洛杉矶湖人"), 28, QStringLiteral("PF"), 203, 104, QStringLiteral("日本")},
-        {"B001", QStringLiteral("杰森·塔图姆"), 26, QStringLiteral("波士顿凯尔特人"), 0, QStringLiteral("SF"), 203, 95, QStringLiteral("美国")},
+        {"B001", QStringLiteral("杰森·塔图姆"), 26, QStringLiteral("波士顿凯尔特人"), 12, QStringLiteral("SF"), 203, 95, QStringLiteral("美国")},
         {"B002", QStringLiteral("杰伦·布朗"), 28, QStringLiteral("波士顿凯尔特人"), 7, QStringLiteral("SG"), 198, 101, QStringLiteral("美国")},
         {"B003", QStringLiteral("德里克·怀特"), 30, QStringLiteral("波士顿凯尔特人"), 9, QStringLiteral("PG"), 193, 86, QStringLiteral("美国")},
         {"B004", QStringLiteral("朱·霍勒迪"), 34, QStringLiteral("波士顿凯尔特人"), 4, QStringLiteral("PG"), 193, 93, QStringLiteral("美国")},
@@ -523,7 +523,7 @@ void DataStore::seedDemoData()
         {"C001", QStringLiteral("扎克·拉文"), 29, QStringLiteral("芝加哥公牛"), 8, QStringLiteral("SG"), 196, 91, QStringLiteral("美国")},
         {"C002", QStringLiteral("德玛尔·德罗赞"), 35, QStringLiteral("芝加哥公牛"), 11, QStringLiteral("SF"), 198, 100, QStringLiteral("美国")},
         {"C003", QStringLiteral("尼古拉·武切维奇"), 34, QStringLiteral("芝加哥公牛"), 9, QStringLiteral("C"), 211, 118, QStringLiteral("黑山")},
-        {"C004", QStringLiteral("科比·怀特"), 24, QStringLiteral("芝加哥公牛"), 0, QStringLiteral("PG"), 193, 88, QStringLiteral("美国")},
+        {"C004", QStringLiteral("科比·怀特"), 24, QStringLiteral("芝加哥公牛"), 2, QStringLiteral("PG"), 193, 88, QStringLiteral("美国")},
     };
     for (const Player &p : players)
         m_players.append(p);
@@ -614,16 +614,16 @@ void DataStore::seedDemoData()
          mk("C003", QStringLiteral("尼古拉·武切维奇"), 2, 12, 1, 0),
          mk("C004", QStringLiteral("科比·怀特"), 2, 3, 0, 2)}));
 
-    // 默认账号：admin / 123456
-    User admin;
-    admin.username = QStringLiteral("admin");
-    admin.salt = QStringLiteral("d3f1a9c47b2e6085");
-    admin.passwordHash = QStringLiteral("");  // 由 AuthManager 首次登录前补齐
-    // 直接内联计算，避免依赖 AuthManager
-    {
-        const QByteArray raw = (admin.salt + QStringLiteral("123456")).toUtf8();
-        admin.passwordHash = QString::fromLatin1(
-            QCryptographicHash::hash(raw, QCryptographicHash::Sha256).toHex());
+    // 默认账号：admin / 123456（仅在尚无该账号时创建，避免重复）
+    if (!userExists(QStringLiteral("admin"))) {
+        User admin;
+        admin.username = QStringLiteral("admin");
+        admin.salt = QStringLiteral("d3f1a9c47b2e6085");
+        {
+            const QByteArray raw = (admin.salt + QStringLiteral("123456")).toUtf8();
+            admin.passwordHash = QString::fromLatin1(
+                QCryptographicHash::hash(raw, QCryptographicHash::Sha256).toHex());
+        }
+        m_users.append(admin);
     }
-    m_users.append(admin);
 }

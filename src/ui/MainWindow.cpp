@@ -81,8 +81,8 @@ QWidget *MainWindow::buildSidebar()
     v->setContentsMargins(0, 22, 0, 18);
     v->setSpacing(4);
 
-    auto *brand = new QLabel(QStringLiteral("🏀  篮球联赛"), sidebar);
-    brand->setStyleSheet(QStringLiteral("font-size:19px; font-weight:800; color:#FFFFFF; padding:0 18px;"));
+    auto *brand = new QLabel(QStringLiteral("🏀  篮球联赛管理系统"), sidebar);
+    brand->setStyleSheet(QStringLiteral("font-size:16px; font-weight:800; color:#FFFFFF; padding:0 18px;"));
     auto *brandSub = new QLabel(QStringLiteral("League Management"), sidebar);
     brandSub->setStyleSheet(QStringLiteral("color:#6B778C; font-size:11px; letter-spacing:2px; padding:0 18px 12px 18px;"));
     v->addWidget(brand);

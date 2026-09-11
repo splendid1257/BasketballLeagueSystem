@@ -121,7 +121,10 @@ QWidget *LoginDialog::buildLoginForm()
     connect(loginBtn, &QPushButton::clicked, this, &LoginDialog::doLogin);
     connect(m_loginPass, &QLineEdit::returnPressed, this, &LoginDialog::doLogin);
     connect(m_loginUser, &QLineEdit::returnPressed, this, &LoginDialog::doLogin);
-    connect(toReg, &QPushButton::clicked, this, [this]() { m_stack->setCurrentIndex(1); });
+    connect(toReg, &QPushButton::clicked, this, [this]() {
+        m_stack->setCurrentIndex(1);
+        validateRegister();
+    });
     return page;
 }
 
@@ -174,7 +177,14 @@ QWidget *LoginDialog::buildRegisterForm()
 
     connect(regBtn, &QPushButton::clicked, this, &LoginDialog::doRegister);
     connect(m_regPass2, &QLineEdit::returnPressed, this, &LoginDialog::doRegister);
-    connect(toLogin, &QPushButton::clicked, this, [this]() { m_stack->setCurrentIndex(0); });
+    // 输入过程中实时校验，逐项提示具体问题
+    connect(m_regUser, &QLineEdit::textChanged, this, [this](const QString &) { validateRegister(); });
+    connect(m_regPass, &QLineEdit::textChanged, this, [this](const QString &) { validateRegister(); });
+    connect(m_regPass2, &QLineEdit::textChanged, this, [this](const QString &) { validateRegister(); });
+    connect(toLogin, &QPushButton::clicked, this, [this]() {
+        m_regError->clear();
+        m_stack->setCurrentIndex(0);
+    });
     return page;
 }
 
@@ -192,9 +202,9 @@ void LoginDialog::doLogin()
 
 void LoginDialog::doRegister()
 {
-    m_regError->clear();
-    if (m_regPass->text() != m_regPass2->text()) {
-        m_regError->setText(QStringLiteral("两次输入的密码不一致"));
+    if (!validateRegister()) {
+        if (m_regError->text().isEmpty())
+            m_regError->setText(QStringLiteral("请完整填写用户名和密码"));
         return;
     }
     QString error;
@@ -202,6 +212,56 @@ void LoginDialog::doRegister()
         m_username = m_regUser->text().trimmed();
         accept();
     } else {
+        m_regError->setStyleSheet(QStringLiteral("color:#FF6B7A;"));
         m_regError->setText(error);
     }
+}
+
+// 实时校验：边输入边给出具体的不合法原因；全部通过时显示绿色提示
+bool LoginDialog::validateRegister()
+{
+    const QString user = m_regUser->text().trimmed();
+    const QString pass = m_regPass->text();
+    const QString pass2 = m_regPass2->text();
+
+    QString error;
+    if (!user.isEmpty() && user.size() < 3) {
+        error = QStringLiteral("用户名至少 3 个字符");
+    } else if (!pass.isEmpty()) {
+        if (pass.size() < 8)
+            error = QStringLiteral("密码至少 8 位");
+        else if (pass.contains(QChar(' ')))
+            error = QStringLiteral("密码不能包含空格");
+        else {
+            bool hasLetter = false;
+            bool hasDigit = false;
+            for (const QChar c : pass) {
+                if (c.isLetter())
+                    hasLetter = true;
+                else if (c.isDigit())
+                    hasDigit = true;
+            }
+            if (!hasLetter)
+                error = QStringLiteral("密码必须包含字母");
+            else if (!hasDigit)
+                error = QStringLiteral("密码必须包含数字");
+        }
+    }
+    if (error.isEmpty() && !pass.isEmpty() && !pass2.isEmpty() && pass2 != pass)
+        error = QStringLiteral("两次输入的密码不一致");
+
+    if (!error.isEmpty()) {
+        m_regError->setStyleSheet(QStringLiteral("color:#FF6B7A;"));
+        m_regError->setText(error);
+        return false;
+    }
+
+    const bool complete = user.size() >= 3 && pass.size() >= 8 && pass == pass2;
+    if (complete) {
+        m_regError->setStyleSheet(QStringLiteral("color:#37D67A;"));
+        m_regError->setText(QStringLiteral("✓ 校验通过，可以注册"));
+        return true;
+    }
+    m_regError->clear();
+    return false;
 }
