@@ -134,8 +134,9 @@ QWidget *LoginDialog::buildRegisterForm()
 
     auto *title = new QLabel(QStringLiteral("创建账号"), page);
     title->setObjectName(QStringLiteral("H1"));
-    auto *sub = new QLabel(QStringLiteral("用户名至少 3 位，密码至少 6 位"), page);
+    auto *sub = new QLabel(QStringLiteral("用户名至少 3 位；密码至少 8 位，且必须同时包含字母和数字"), page);
     sub->setObjectName(QStringLiteral("Muted"));
+    sub->setWordWrap(true);
     v->addWidget(title);
     v->addWidget(sub);
     v->addSpacing(6);

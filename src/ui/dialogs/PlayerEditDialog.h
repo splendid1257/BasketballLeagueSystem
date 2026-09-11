@@ -28,6 +28,11 @@ private:
     QLineEdit *m_name = nullptr;
     QSpinBox *m_age = nullptr;
     QComboBox *m_team = nullptr;
+    QSpinBox *m_number = nullptr;
+    QComboBox *m_position = nullptr;
+    QSpinBox *m_height = nullptr;
+    QSpinBox *m_weight = nullptr;
+    QLineEdit *m_country = nullptr;
     QLabel *m_titleLabel = nullptr;
     bool m_editMode = false;
 };

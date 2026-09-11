@@ -40,10 +40,13 @@ StatsPage::StatsPage(DataStore *store, QWidget *parent)
 
     m_table = new QTableWidget(this);
     ui::setupTable(m_table, {QStringLiteral("排名"), QStringLiteral("球员"),
-                             QStringLiteral("球队"), QStringLiteral("年龄"),
-                             QStringLiteral("出场"), QStringLiteral("数值")});
-    m_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+                             QStringLiteral("球队"), QStringLiteral("位置"),
+                             QStringLiteral("年龄"), QStringLiteral("身高"),
+                             QStringLiteral("体重"), QStringLiteral("出场"),
+                             QStringLiteral("数值")});
+    for (int c = 0; c < m_table->columnCount(); ++c)
+        ui::alignHeader(m_table, c, (c == 1 || c == 2) ? Qt::AlignLeft : Qt::AlignCenter);
+    ui::autoSizeColumns(m_table, {1, 2});
     root->addWidget(m_table, 1);
 
     connect(m_board, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int) { reload(); });
@@ -85,8 +88,11 @@ void StatsPage::reload()
         m_table->setItem(r, 0, ui::item(QString::number(r + 1), Qt::AlignCenter, medal));
         m_table->setItem(r, 1, ui::item(p.name, Qt::AlignLeft));
         m_table->setItem(r, 2, ui::item(p.team, Qt::AlignLeft, ui::dim()));
-        m_table->setItem(r, 3, ui::item(QString::number(p.age)));
-        m_table->setItem(r, 4, ui::item(QString::number(games)));
-        m_table->setItem(r, 5, ui::item(QString::number(rows.at(r).second), Qt::AlignCenter, ui::gold()));
+        m_table->setItem(r, 3, ui::item(p.position.isEmpty() ? QStringLiteral("-") : p.position));
+        m_table->setItem(r, 4, ui::item(QString::number(p.age)));
+        m_table->setItem(r, 5, ui::item(p.heightCm > 0 ? QString::number(p.heightCm) : QStringLiteral("-")));
+        m_table->setItem(r, 6, ui::item(p.weightKg > 0 ? QString::number(p.weightKg) : QStringLiteral("-")));
+        m_table->setItem(r, 7, ui::item(QString::number(games)));
+        m_table->setItem(r, 8, ui::item(QString::number(rows.at(r).second), Qt::AlignCenter, ui::gold()));
     }
 }

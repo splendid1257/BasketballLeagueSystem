@@ -2,8 +2,10 @@
 
 #include "storage/DataStore.h"
 #include "ui/dialogs/PlayerEditDialog.h"
+#include "ui/widgets/EmptyStateLabel.h"
 #include "ui/widgets/UiUtils.h"
 
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -18,7 +20,7 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
 {
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(28, 24, 28, 24);
-    root->setSpacing(16);
+    root->setSpacing(14);
 
     auto *title = new QLabel(QStringLiteral("球员管理"), this);
     title->setObjectName(QStringLiteral("H1"));
@@ -27,13 +29,30 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     root->addWidget(title);
     root->addWidget(sub);
 
+    // 搜索 + 筛选
+    auto *filters = new QHBoxLayout();
+    filters->setSpacing(10);
+    m_search = new QLineEdit(this);
+    m_search->setPlaceholderText(QStringLiteral("搜索编号 / 姓名 / 球队 / 位置…"));
+    m_search->setClearButtonEnabled(true);
+    m_search->setMinimumWidth(260);
+    filters->addWidget(m_search);
+
+    m_teamFilter = new QComboBox(this);
+    m_teamFilter->setMinimumWidth(150);
+    m_positionFilter = new QComboBox(this);
+    m_positionFilter->setMinimumWidth(110);
+    filters->addWidget(m_teamFilter);
+    filters->addWidget(m_positionFilter);
+    filters->addStretch();
+    root->addLayout(filters);
+
+    // 操作按钮
     auto *toolbar = new QHBoxLayout();
     toolbar->setSpacing(10);
-    m_search = new QLineEdit(this);
-    m_search->setPlaceholderText(QStringLiteral("搜索编号 / 姓名 / 球队…"));
-    m_search->setClearButtonEnabled(true);
-    m_search->setMinimumWidth(280);
-    toolbar->addWidget(m_search);
+    m_countLabel = new QLabel(this);
+    m_countLabel->setObjectName(QStringLiteral("Muted"));
+    toolbar->addWidget(m_countLabel);
     toolbar->addStretch();
 
     auto *detailBtn = new QPushButton(QStringLiteral("查看详情"), this);
@@ -50,13 +69,29 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
 
     m_table = new QTableWidget(this);
     ui::setupTable(m_table, {QStringLiteral("编号"), QStringLiteral("姓名"),
-                             QStringLiteral("年龄"), QStringLiteral("球队"),
-                             QStringLiteral("出场"), QStringLiteral("总得分"),
-                             QStringLiteral("三分"), QStringLiteral("篮板"),
-                             QStringLiteral("扣篮"), QStringLiteral("抢断")});
-    m_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+                             QStringLiteral("球队"), QStringLiteral("号码"),
+                             QStringLiteral("位置"), QStringLiteral("年龄"),
+                             QStringLiteral("身高"), QStringLiteral("体重"),
+                             QStringLiteral("国籍"), QStringLiteral("出场"),
+                             QStringLiteral("得分")});
+    for (int c = 0; c < m_table->columnCount(); ++c)
+        ui::alignHeader(m_table, c, (c == 1 || c == 2) ? Qt::AlignLeft : Qt::AlignCenter);
+    ui::autoSizeColumns(m_table, {1, 2});
     root->addWidget(m_table, 1);
+
+    // 分页
+    auto *pager = new QHBoxLayout();
+    pager->setSpacing(10);
+    pager->addStretch();
+    m_prevBtn = new QPushButton(QStringLiteral("‹ 上一页"), this);
+    m_prevBtn->setObjectName(QStringLiteral("Ghost"));
+    m_nextBtn = new QPushButton(QStringLiteral("下一页 ›"), this);
+    m_nextBtn->setObjectName(QStringLiteral("Ghost"));
+    pager->addWidget(m_prevBtn);
+    pager->addWidget(m_nextBtn);
+    root->addLayout(pager);
+
+    m_empty = new EmptyStateLabel(m_table, this);
 
     connect(addBtn, &QPushButton::clicked, this, &PlayersPage::onAdd);
     connect(editBtn, &QPushButton::clicked, this, &PlayersPage::onEdit);
@@ -64,45 +99,132 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     connect(detailBtn, &QPushButton::clicked, this, &PlayersPage::onDetail);
     connect(m_table, &QTableWidget::doubleClicked, this, &PlayersPage::onDetail);
     connect(m_search, &QLineEdit::textChanged, this, &PlayersPage::applyFilter);
+    connect(m_teamFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) { applyFilter(); });
+    connect(m_positionFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            [this](int) { applyFilter(); });
+    connect(m_prevBtn, &QPushButton::clicked, this, [this]() {
+        if (m_page > 0) { --m_page; renderPage(); }
+    });
+    connect(m_nextBtn, &QPushButton::clicked, this, [this]() {
+        ++m_page; renderPage();
+    });
     connect(m_store, &DataStore::changed, this, &PlayersPage::refresh);
 
     refresh();
 }
 
+void PlayersPage::rebuildFilters()
+{
+    const QString prevTeam = m_teamFilter->currentData().toString();
+    const QString prevPos = m_positionFilter->currentData().toString();
+
+    m_teamFilter->blockSignals(true);
+    m_positionFilter->blockSignals(true);
+
+    m_teamFilter->clear();
+    m_teamFilter->addItem(QStringLiteral("全部球队"), QString());
+    for (const QString &t : m_store->teams())
+        m_teamFilter->addItem(t, t);
+
+    QStringList positions;
+    for (const Player &p : m_store->players()) {
+        if (!p.position.isEmpty() && !positions.contains(p.position))
+            positions.append(p.position);
+    }
+    positions.sort();
+    m_positionFilter->clear();
+    m_positionFilter->addItem(QStringLiteral("全部位置"), QString());
+    for (const QString &pos : positions)
+        m_positionFilter->addItem(pos, pos);
+
+    const int ti = m_teamFilter->findData(prevTeam);
+    if (ti >= 0)
+        m_teamFilter->setCurrentIndex(ti);
+    const int pi = m_positionFilter->findData(prevPos);
+    if (pi >= 0)
+        m_positionFilter->setCurrentIndex(pi);
+
+    m_teamFilter->blockSignals(false);
+    m_positionFilter->blockSignals(false);
+}
+
 void PlayersPage::refresh()
 {
-    const auto &players = m_store->players();
-    m_table->setRowCount(players.size());
-    for (int r = 0; r < players.size(); ++r) {
-        const Player &p = players.at(r);
-        const PlayerStats t = m_store->careerTotals(p.id);
-        const int games = m_store->playerMatchLog(p.id).size();
-
-        m_table->setItem(r, 0, ui::item(p.id, Qt::AlignCenter, ui::gold()));
-        m_table->setItem(r, 1, ui::item(p.name, Qt::AlignLeft));
-        m_table->setItem(r, 2, ui::item(QString::number(p.age)));
-        m_table->setItem(r, 3, ui::item(p.team, Qt::AlignLeft, ui::dim()));
-        m_table->setItem(r, 4, ui::item(QString::number(games)));
-        m_table->setItem(r, 5, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
-        m_table->setItem(r, 6, ui::item(QString::number(t.threePointers)));
-        m_table->setItem(r, 7, ui::item(QString::number(t.rebounds)));
-        m_table->setItem(r, 8, ui::item(QString::number(t.dunks)));
-        m_table->setItem(r, 9, ui::item(QString::number(t.steals)));
-    }
+    rebuildFilters();
     applyFilter();
 }
 
 void PlayersPage::applyFilter()
 {
     const QString key = m_search->text().trimmed();
-    for (int r = 0; r < m_table->rowCount(); ++r) {
-        bool match = key.isEmpty();
-        for (int c = 0; c < m_table->columnCount() && !match; ++c) {
-            if (m_table->item(r, c) && m_table->item(r, c)->text().contains(key, Qt::CaseInsensitive))
-                match = true;
+    const QString team = m_teamFilter->currentData().toString();
+    const QString pos = m_positionFilter->currentData().toString();
+
+    m_filtered.clear();
+    for (const Player &p : m_store->players()) {
+        if (!team.isEmpty() && p.team != team)
+            continue;
+        if (!pos.isEmpty() && p.position != pos)
+            continue;
+        if (!key.isEmpty()) {
+            const QString hay = QStringLiteral("%1 %2 %3 %4 %5 %6")
+                                    .arg(p.id, p.name, p.team, p.position, p.country,
+                                         QString::number(p.number));
+            if (!hay.contains(key, Qt::CaseInsensitive))
+                continue;
         }
-        m_table->setRowHidden(r, !match);
+        m_filtered.append(p);
     }
+    m_page = 0;
+    renderPage();
+}
+
+void PlayersPage::renderPage()
+{
+    const int total = m_filtered.size();
+    const int pageCount = qMax(1, (total + m_pageSize - 1) / m_pageSize);
+    m_page = qBound(0, m_page, pageCount - 1);
+
+    const int start = m_page * m_pageSize;
+    const int rows = qMin(m_pageSize, total - start);
+
+    m_table->setRowCount(qMax(0, rows));
+    for (int i = 0; i < rows; ++i) {
+        const Player &p = m_filtered.at(start + i);
+        const PlayerStats t = m_store->careerTotals(p.id);
+        const int games = m_store->playerMatchLog(p.id).size();
+
+        m_table->setItem(i, 0, ui::item(p.id, Qt::AlignCenter, ui::gold()));
+        m_table->setItem(i, 1, ui::item(p.name, Qt::AlignLeft));
+        m_table->setItem(i, 2, ui::item(p.team, Qt::AlignLeft, ui::dim()));
+        m_table->setItem(i, 3, ui::item(p.number > 0 ? QString::number(p.number) : QStringLiteral("-")));
+        m_table->setItem(i, 4, ui::item(p.position.isEmpty() ? QStringLiteral("-") : p.position));
+        m_table->setItem(i, 5, ui::item(QString::number(p.age)));
+        m_table->setItem(i, 6, ui::item(p.heightCm > 0 ? QString::number(p.heightCm) : QStringLiteral("-")));
+        m_table->setItem(i, 7, ui::item(p.weightKg > 0 ? QString::number(p.weightKg) : QStringLiteral("-")));
+        m_table->setItem(i, 8, ui::item(p.country.isEmpty() ? QStringLiteral("-") : p.country,
+                                        Qt::AlignCenter, ui::dim()));
+        m_table->setItem(i, 9, ui::item(QString::number(games)));
+        m_table->setItem(i, 10, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
+    }
+
+    m_countLabel->setText(QStringLiteral("共 %1 名球员 · 第 %2/%3 页")
+                              .arg(total)
+                              .arg(m_page + 1)
+                              .arg(pageCount));
+    m_prevBtn->setEnabled(m_page > 0);
+    m_nextBtn->setEnabled(m_page + 1 < pageCount);
+
+    if (total == 0) {
+        const bool filtered = !m_search->text().trimmed().isEmpty()
+                              || !m_teamFilter->currentData().toString().isEmpty()
+                              || !m_positionFilter->currentData().toString().isEmpty();
+        m_empty->setMessage(filtered
+                                ? QStringLiteral("未找到匹配的球员\n试试更换关键词，或调整球队 / 位置筛选")
+                                : QStringLiteral("暂无球员\n点击右上角「＋ 新增球员」开始录入"));
+    }
+    m_empty->refresh();
 }
 
 QString PlayersPage::selectedPlayerId() const

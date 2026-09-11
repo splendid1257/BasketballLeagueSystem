@@ -2,6 +2,7 @@
 
 #include "storage/DataStore.h"
 #include "ui/dialogs/MatchEditDialog.h"
+#include "ui/widgets/EmptyStateLabel.h"
 #include "ui/widgets/UiUtils.h"
 
 #include <QHBoxLayout>
@@ -53,13 +54,12 @@ MatchesPage::MatchesPage(DataStore *store, QWidget *parent)
                              QStringLiteral("地点"), QStringLiteral("球队一"),
                              QStringLiteral("球队二"), QStringLiteral("比分"),
                              QStringLiteral("胜者")});
-    m_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    m_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    m_table->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    ui::autoSizeColumns(m_table, {2, 3, 4});
+    for (int c = 0; c < m_table->columnCount(); ++c)
+        ui::alignHeader(m_table, c, (c == 2 || c == 3 || c == 4 || c == 6) ? Qt::AlignLeft : Qt::AlignCenter);
     root->addWidget(m_table, 1);
+
+    m_empty = new EmptyStateLabel(m_table, this);
 
     connect(addBtn, &QPushButton::clicked, this, &MatchesPage::onAdd);
     connect(editBtn, &QPushButton::clicked, this, &MatchesPage::onEdit);
@@ -99,6 +99,13 @@ void MatchesPage::applyFilter()
                 match = true;
         }
         m_table->setRowHidden(r, !match);
+    }
+
+    if (m_empty) {
+        m_empty->setMessage(m_table->rowCount() == 0
+                                ? QStringLiteral("暂无场次\n点击右上角「＋ 新增场次」开始录入")
+                                : QStringLiteral("未找到匹配的场次\n试试更换编号 / 球队 / 地点关键词"));
+        m_empty->refresh();
     }
 }
 

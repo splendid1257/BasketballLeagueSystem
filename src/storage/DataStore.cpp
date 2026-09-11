@@ -126,6 +126,11 @@ bool DataStore::save() const
         o["name"] = p.name;
         o["age"] = p.age;
         o["team"] = p.team;
+        o["number"] = p.number;
+        o["position"] = p.position;
+        o["heightCm"] = p.heightCm;
+        o["weightKg"] = p.weightKg;
+        o["country"] = p.country;
         playersArr.append(o);
     }
 
@@ -167,6 +172,11 @@ bool DataStore::loadPlayers()
         p.name = o["name"].toString();
         p.age = o["age"].toInt();
         p.team = o["team"].toString();
+        p.number = o["number"].toInt();
+        p.position = o["position"].toString();
+        p.heightCm = o["heightCm"].toInt();
+        p.weightKg = o["weightKg"].toInt();
+        p.country = o["country"].toString();
         if (p.isValid())
             m_players.append(p);
     }
@@ -498,22 +508,22 @@ User DataStore::findUser(const QString &username) const
 void DataStore::seedDemoData()
 {
     const Player players[] = {
-        {"L001", QStringLiteral("勒布朗·詹姆斯"), 39, QStringLiteral("洛杉矶湖人")},
-        {"L002", QStringLiteral("安东尼·戴维斯"), 31, QStringLiteral("洛杉矶湖人")},
-        {"L003", QStringLiteral("奥斯汀·里夫斯"), 26, QStringLiteral("洛杉矶湖人")},
-        {"L004", QStringLiteral("八村塁"), 26, QStringLiteral("洛杉矶湖人")},
-        {"B001", QStringLiteral("杰森·塔图姆"), 26, QStringLiteral("波士顿凯尔特人")},
-        {"B002", QStringLiteral("杰伦·布朗"), 28, QStringLiteral("波士顿凯尔特人")},
-        {"B003", QStringLiteral("德里克·怀特"), 30, QStringLiteral("波士顿凯尔特人")},
-        {"B004", QStringLiteral("朱·霍勒迪"), 34, QStringLiteral("波士顿凯尔特人")},
-        {"G001", QStringLiteral("斯蒂芬·库里"), 36, QStringLiteral("金州勇士")},
-        {"G002", QStringLiteral("克莱·汤普森"), 34, QStringLiteral("金州勇士")},
-        {"G003", QStringLiteral("德雷蒙德·格林"), 34, QStringLiteral("金州勇士")},
-        {"G004", QStringLiteral("安德鲁·威金斯"), 29, QStringLiteral("金州勇士")},
-        {"C001", QStringLiteral("扎克·拉文"), 29, QStringLiteral("芝加哥公牛")},
-        {"C002", QStringLiteral("德玛尔·德罗赞"), 35, QStringLiteral("芝加哥公牛")},
-        {"C003", QStringLiteral("尼古拉·武切维奇"), 34, QStringLiteral("芝加哥公牛")},
-        {"C004", QStringLiteral("科比·怀特"), 24, QStringLiteral("芝加哥公牛")},
+        {"L001", QStringLiteral("勒布朗·詹姆斯"), 39, QStringLiteral("洛杉矶湖人"), 23, QStringLiteral("SF"), 206, 113, QStringLiteral("美国")},
+        {"L002", QStringLiteral("安东尼·戴维斯"), 31, QStringLiteral("洛杉矶湖人"), 3, QStringLiteral("PF"), 208, 115, QStringLiteral("美国")},
+        {"L003", QStringLiteral("奥斯汀·里夫斯"), 26, QStringLiteral("洛杉矶湖人"), 15, QStringLiteral("SG"), 196, 89, QStringLiteral("美国")},
+        {"L004", QStringLiteral("八村塁"), 26, QStringLiteral("洛杉矶湖人"), 28, QStringLiteral("PF"), 203, 104, QStringLiteral("日本")},
+        {"B001", QStringLiteral("杰森·塔图姆"), 26, QStringLiteral("波士顿凯尔特人"), 0, QStringLiteral("SF"), 203, 95, QStringLiteral("美国")},
+        {"B002", QStringLiteral("杰伦·布朗"), 28, QStringLiteral("波士顿凯尔特人"), 7, QStringLiteral("SG"), 198, 101, QStringLiteral("美国")},
+        {"B003", QStringLiteral("德里克·怀特"), 30, QStringLiteral("波士顿凯尔特人"), 9, QStringLiteral("PG"), 193, 86, QStringLiteral("美国")},
+        {"B004", QStringLiteral("朱·霍勒迪"), 34, QStringLiteral("波士顿凯尔特人"), 4, QStringLiteral("PG"), 193, 93, QStringLiteral("美国")},
+        {"G001", QStringLiteral("斯蒂芬·库里"), 36, QStringLiteral("金州勇士"), 30, QStringLiteral("PG"), 188, 84, QStringLiteral("美国")},
+        {"G002", QStringLiteral("克莱·汤普森"), 34, QStringLiteral("金州勇士"), 11, QStringLiteral("SG"), 198, 98, QStringLiteral("美国")},
+        {"G003", QStringLiteral("德雷蒙德·格林"), 34, QStringLiteral("金州勇士"), 23, QStringLiteral("PF"), 198, 104, QStringLiteral("美国")},
+        {"G004", QStringLiteral("安德鲁·威金斯"), 29, QStringLiteral("金州勇士"), 22, QStringLiteral("SF"), 201, 89, QStringLiteral("加拿大")},
+        {"C001", QStringLiteral("扎克·拉文"), 29, QStringLiteral("芝加哥公牛"), 8, QStringLiteral("SG"), 196, 91, QStringLiteral("美国")},
+        {"C002", QStringLiteral("德玛尔·德罗赞"), 35, QStringLiteral("芝加哥公牛"), 11, QStringLiteral("SF"), 198, 100, QStringLiteral("美国")},
+        {"C003", QStringLiteral("尼古拉·武切维奇"), 34, QStringLiteral("芝加哥公牛"), 9, QStringLiteral("C"), 211, 118, QStringLiteral("黑山")},
+        {"C004", QStringLiteral("科比·怀特"), 24, QStringLiteral("芝加哥公牛"), 0, QStringLiteral("PG"), 193, 88, QStringLiteral("美国")},
     };
     for (const Player &p : players)
         m_players.append(p);

@@ -55,11 +55,13 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     m_teamMeta->setObjectName(QStringLiteral("Muted"));
     m_roster = new QTableWidget(rightCard);
     ui::setupTable(m_roster, {QStringLiteral("编号"), QStringLiteral("姓名"),
-                              QStringLiteral("年龄"), QStringLiteral("出场"),
-                              QStringLiteral("总得分"), QStringLiteral("三分"),
-                              QStringLiteral("篮板"), QStringLiteral("扣篮"),
-                              QStringLiteral("抢断")});
-    m_roster->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+                              QStringLiteral("号码"), QStringLiteral("位置"),
+                              QStringLiteral("年龄"), QStringLiteral("身高"),
+                              QStringLiteral("体重"), QStringLiteral("国籍"),
+                              QStringLiteral("出场"), QStringLiteral("总得分")});
+    for (int c = 0; c < m_roster->columnCount(); ++c)
+        ui::alignHeader(m_roster, c, c == 1 ? Qt::AlignLeft : Qt::AlignCenter);
+    ui::autoSizeColumns(m_roster, {1});
     rv->addWidget(m_teamTitle);
     rv->addWidget(m_teamMeta);
     rv->addSpacing(6);
@@ -138,12 +140,14 @@ void TeamsPage::onTeamSelected()
         const int games = m_store->playerMatchLog(p.id).size();
         m_roster->setItem(r, 0, ui::item(p.id, Qt::AlignCenter, ui::gold()));
         m_roster->setItem(r, 1, ui::item(p.name, Qt::AlignLeft));
-        m_roster->setItem(r, 2, ui::item(QString::number(p.age)));
-        m_roster->setItem(r, 3, ui::item(QString::number(games)));
-        m_roster->setItem(r, 4, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
-        m_roster->setItem(r, 5, ui::item(QString::number(t.threePointers)));
-        m_roster->setItem(r, 6, ui::item(QString::number(t.rebounds)));
-        m_roster->setItem(r, 7, ui::item(QString::number(t.dunks)));
-        m_roster->setItem(r, 8, ui::item(QString::number(t.steals)));
+        m_roster->setItem(r, 2, ui::item(p.number > 0 ? QString::number(p.number) : QStringLiteral("-")));
+        m_roster->setItem(r, 3, ui::item(p.position.isEmpty() ? QStringLiteral("-") : p.position));
+        m_roster->setItem(r, 4, ui::item(QString::number(p.age)));
+        m_roster->setItem(r, 5, ui::item(p.heightCm > 0 ? QString::number(p.heightCm) : QStringLiteral("-")));
+        m_roster->setItem(r, 6, ui::item(p.weightKg > 0 ? QString::number(p.weightKg) : QStringLiteral("-")));
+        m_roster->setItem(r, 7, ui::item(p.country.isEmpty() ? QStringLiteral("-") : p.country,
+                                         Qt::AlignCenter, ui::dim()));
+        m_roster->setItem(r, 8, ui::item(QString::number(games)));
+        m_roster->setItem(r, 9, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
     }
 }

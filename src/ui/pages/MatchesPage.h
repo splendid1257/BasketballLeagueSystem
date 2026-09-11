@@ -5,6 +5,7 @@
 class DataStore;
 class QTableWidget;
 class QLineEdit;
+class EmptyStateLabel;
 
 // 场次管理：列表 + 搜索 + 增删改查
 class MatchesPage : public QWidget
@@ -31,4 +32,5 @@ private:
     DataStore *m_store = nullptr;
     QTableWidget *m_table = nullptr;
     QLineEdit *m_search = nullptr;
+    EmptyStateLabel *m_empty = nullptr;
 };

@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QStringList>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -57,9 +58,9 @@ PlayerDetailPage::PlayerDetailPage(DataStore *store, QWidget *parent)
                            QStringLiteral("三分"), QStringLiteral("篮板"),
                            QStringLiteral("扣篮"), QStringLiteral("抢断"),
                            QStringLiteral("得分")});
-    m_log->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    m_log->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    m_log->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    ui::autoSizeColumns(m_log, {3});
+    for (int c = 0; c < m_log->columnCount(); ++c)
+        ui::alignHeader(m_log, c, (c == 2 || c == 3) ? Qt::AlignLeft : Qt::AlignCenter);
     root->addWidget(m_log, 1);
 
     connect(back, &QPushButton::clicked, this, &PlayerDetailPage::backRequested);
@@ -83,11 +84,20 @@ void PlayerDetailPage::refresh()
     const int games = m_store->playerMatchLog(m_playerId).size();
 
     m_name->setText(p.name.isEmpty() ? QStringLiteral("（已删除的球员）") : p.name);
-    m_sub->setText(QStringLiteral("编号 %1 · %2 · %3 岁 · 出场 %4 场")
-                       .arg(p.id.isEmpty() ? QStringLiteral("-") : p.id,
-                            p.team.isEmpty() ? QStringLiteral("无球队") : p.team)
-                       .arg(p.age)
-                       .arg(games));
+    QStringList bits;
+    bits << QStringLiteral("编号 %1").arg(p.id.isEmpty() ? QStringLiteral("-") : p.id);
+    bits << (p.team.isEmpty() ? QStringLiteral("无球队") : p.team);
+    if (!p.position.isEmpty())
+        bits << p.position;
+    bits << QStringLiteral("%1 岁").arg(p.age);
+    if (p.heightCm > 0)
+        bits << QStringLiteral("%1 cm").arg(p.heightCm);
+    if (p.weightKg > 0)
+        bits << QStringLiteral("%1 kg").arg(p.weightKg);
+    if (!p.country.isEmpty())
+        bits << p.country;
+    bits << QStringLiteral("出场 %1 场").arg(games);
+    m_sub->setText(bits.join(QStringLiteral(" · ")));
 
     m_cardPoints->setValue(QString::number(total.points()));
     m_cardTp->setValue(QString::number(total.threePointers));

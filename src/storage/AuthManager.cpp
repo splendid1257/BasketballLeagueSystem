@@ -35,8 +35,24 @@ bool AuthManager::registerUser(const QString &username, const QString &password,
         if (error) *error = QStringLiteral("用户名至少 3 个字符");
         return false;
     }
-    if (password.size() < 6) {
-        if (error) *error = QStringLiteral("密码至少 6 位");
+    if (password.size() < 8) {
+        if (error) *error = QStringLiteral("密码至少 8 位");
+        return false;
+    }
+    if (password.contains(QChar(' '))) {
+        if (error) *error = QStringLiteral("密码不能包含空格");
+        return false;
+    }
+    bool hasLetter = false;
+    bool hasDigit = false;
+    for (const QChar c : password) {
+        if (c.isLetter())
+            hasLetter = true;
+        else if (c.isDigit())
+            hasDigit = true;
+    }
+    if (!hasLetter || !hasDigit) {
+        if (error) *error = QStringLiteral("密码必须同时包含字母和数字");
         return false;
     }
     if (m_store->userExists(name)) {
