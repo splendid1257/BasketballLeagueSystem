@@ -147,10 +147,10 @@ QWidget *MainWindow::buildHeader()
     h->addWidget(m_headerTitle);
     h->addStretch();
 
-    auto *user = new QLabel(header);
-    user->setText(QStringLiteral("👤  %1").arg(m_username));
-    user->setStyleSheet(QStringLiteral("color:#9AA7BC; font-weight:600;"));
-    h->addWidget(user);
+    m_headerUser = new QLabel(header);
+    m_headerUser->setText(QStringLiteral("👤  %1").arg(m_username));
+    m_headerUser->setStyleSheet(QStringLiteral("color:#9AA7BC; font-weight:600;"));
+    h->addWidget(m_headerUser);
     return header;
 }
 
@@ -159,6 +159,8 @@ void MainWindow::setUser(const QString &username)
     m_username = username;
     if (m_userLabel)
         m_userLabel->setText(QStringLiteral("当前用户：%1").arg(username));
+    if (m_headerUser)
+        m_headerUser->setText(QStringLiteral("👤  %1").arg(username));
 }
 
 void MainWindow::navigate(int index)

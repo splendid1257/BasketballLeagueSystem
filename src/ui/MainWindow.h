@@ -45,6 +45,7 @@ private:
     QStackedWidget *m_stack = nullptr;
     QButtonGroup *m_navGroup = nullptr;
     QLabel *m_headerTitle = nullptr;
+    QLabel *m_headerUser = nullptr;
     QLabel *m_userLabel = nullptr;
 
     DashboardPage *m_dashboard = nullptr;

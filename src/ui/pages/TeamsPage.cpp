@@ -111,7 +111,11 @@ void TeamsPage::refresh()
         for (const Player &p : m_store->players())
             if (p.team == team)
                 ++count;
-        auto *it = new QListWidgetItem(QStringLiteral("%1   (%2)").arg(team).arg(count));
+        auto *it = new QListWidgetItem(
+            QStringLiteral("%1   (%2)%3")
+                .arg(team)
+                .arg(count)
+                .arg(count < 5 ? QStringLiteral("  ⚠") : QString()));
         it->setData(Qt::UserRole, team);
         m_teamList->addItem(it);
     }
@@ -164,6 +168,12 @@ void TeamsPage::onTeamSelected()
         bits << QStringLiteral("主场 %1").arg(info.arena);
     bits << QStringLiteral("共 %1 名球员").arg(roster.size());
     bits << QStringLiteral("生涯合计 %1 分").arg(totalPoints);
+    if (roster.size() < 5) {
+        m_teamMeta->setStyleSheet(QStringLiteral("color:#FDB927;"));
+        bits << QStringLiteral("⚠ 不足 5 人，建议补充至至少 5 人");
+    } else {
+        m_teamMeta->setStyleSheet(QString());
+    }
     m_teamMeta->setText(bits.join(QStringLiteral(" · ")));
 
     m_roster->setRowCount(roster.size());
@@ -196,8 +206,25 @@ void TeamsPage::onAddTeam()
                              QStringLiteral("球队「%1」已存在").arg(t.name));
         return;
     }
-    if (!m_store->addTeam(t))
+    if (!m_store->addTeam(t)) {
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("新增失败"));
+        return;
+    }
+    // 创建成功后：阵容不足 5 人时给出提示（不阻止创建）
+    int count = 0;
+    for (const Player &p : m_store->players())
+        if (p.team == t.name)
+            ++count;
+    if (count < 5) {
+        QMessageBox::information(
+            this, QStringLiteral("球队已创建"),
+            QStringLiteral("球队「%1」已创建成功。\n\n"
+                           "当前有 %2 名球员，不足 5 人。\n"
+                           "建议到「球员管理」中新增或改派球员并选择该球队，"
+                           "使阵容至少达到 5 人。")
+                .arg(t.name)
+                .arg(count));
+    }
 }
 
 void TeamsPage::onEditTeam()

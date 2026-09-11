@@ -642,6 +642,10 @@ void DataStore::seedDemoData()
         {"C002", QStringLiteral("德玛尔·德罗赞"), 35, QStringLiteral("芝加哥公牛"), 11, QStringLiteral("SF"), 198, 100, QStringLiteral("美国")},
         {"C003", QStringLiteral("尼古拉·武切维奇"), 34, QStringLiteral("芝加哥公牛"), 9, QStringLiteral("C"), 211, 118, QStringLiteral("黑山")},
         {"C004", QStringLiteral("科比·怀特"), 24, QStringLiteral("芝加哥公牛"), 2, QStringLiteral("PG"), 193, 88, QStringLiteral("美国")},
+        {"L005", QStringLiteral("贾里德·范德比尔特"), 25, QStringLiteral("洛杉矶湖人"), 2, QStringLiteral("PF"), 206, 97, QStringLiteral("美国")},
+        {"B005", QStringLiteral("艾尔·霍福德"), 39, QStringLiteral("波士顿凯尔特人"), 42, QStringLiteral("C"), 206, 109, QStringLiteral("多米尼加")},
+        {"G005", QStringLiteral("布兰丁·波杰姆斯基"), 22, QStringLiteral("金州勇士"), 2, QStringLiteral("SG"), 196, 93, QStringLiteral("美国")},
+        {"C005", QStringLiteral("朗佐·鲍尔"), 27, QStringLiteral("芝加哥公牛"), 2, QStringLiteral("PG"), 198, 86, QStringLiteral("美国")},
     };
     for (const Player &p : players)
         m_players.append(p);
