@@ -31,7 +31,6 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     auto *columns = new QHBoxLayout();
     columns->setSpacing(16);
 
-    // 左：球队列表 + 管理按钮
     auto *leftCard = new QFrame(this);
     leftCard->setObjectName(QStringLiteral("Card"));
     leftCard->setFixedWidth(268);
@@ -64,7 +63,6 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     lv->addLayout(lActions);
     columns->addWidget(leftCard);
 
-    // 右：花名册
     auto *rightCard = new QFrame(this);
     rightCard->setObjectName(QStringLiteral("Card"));
     auto *rv = new QVBoxLayout(rightCard);

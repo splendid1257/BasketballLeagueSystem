@@ -83,7 +83,6 @@ void DashboardPage::refresh()
     m_cardPoints->setValue(QString::number(m_store->totalPoints()));
     m_cardPoints->setSubtitle(QStringLiteral("全部场次合计"));
 
-    // 近期比赛
     QVector<Match> matches = m_store->matches();
     std::sort(matches.begin(), matches.end(), [](const Match &a, const Match &b) {
         return a.dateTime > b.dateTime;
@@ -104,7 +103,6 @@ void DashboardPage::refresh()
     m_recent->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     m_recent->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
 
-    // 得分榜
     const auto board = m_store->leaderboard(DataStore::Board::Points);
     const int topN = qMin(5, board.size());
     m_topScorers->setRowCount(topN);

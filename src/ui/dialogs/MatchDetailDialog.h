@@ -7,7 +7,6 @@ class QTableWidget;
 class QLabel;
 class QWidget;
 
-// 场次详情：展示两队参赛队员名单与数据，支持增删队员、编辑数据
 class MatchDetailDialog : public QDialog
 {
     Q_OBJECT

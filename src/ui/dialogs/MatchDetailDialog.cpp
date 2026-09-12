@@ -61,7 +61,7 @@ void fillStatsTable(QTableWidget *table, const QVector<PlayerStats> &list)
     }
 }
 
-// 简易数据编辑对话框（无自定义信号，纯函数式）
+// 自由函数：一次性对话框，无需成员与信号
 bool promptStats(QWidget *parent, const QString &who, PlayerStats &s)
 {
     QDialog dlg(parent);
@@ -126,7 +126,6 @@ MatchDetailDialog::MatchDetailDialog(DataStore *store, const QString &matchId, Q
     root->setContentsMargins(22, 20, 22, 18);
     root->setSpacing(16);
 
-    // 头部卡片
     auto *header = new QFrame(this);
     header->setObjectName(QStringLiteral("Card"));
     auto *hl = new QVBoxLayout(header);
@@ -144,7 +143,6 @@ MatchDetailDialog::MatchDetailDialog(DataStore *store, const QString &matchId, Q
     hl->addWidget(m_meta);
     root->addWidget(header);
 
-    // 两队面板
     auto *panels = new QHBoxLayout();
     panels->setSpacing(16);
     panels->addWidget(buildTeamPanel(1, m_table1), 1);

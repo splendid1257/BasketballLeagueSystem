@@ -13,7 +13,6 @@ class QLabel;
 class QPushButton;
 class EmptyStateLabel;
 
-// 球员管理：搜索 + 球队/位置筛选 + 分页 + 增删改查（仿 NBA 球员列表页）
 class PlayersPage : public QWidget
 {
     Q_OBJECT

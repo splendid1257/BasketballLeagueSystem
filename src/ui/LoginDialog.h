@@ -7,7 +7,6 @@ class QLineEdit;
 class QLabel;
 class QStackedWidget;
 
-// 登录 / 注册对话框
 class LoginDialog : public QDialog
 {
     Q_OBJECT

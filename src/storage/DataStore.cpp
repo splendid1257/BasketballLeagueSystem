@@ -258,8 +258,6 @@ bool DataStore::loadUsers()
     return true;
 }
 
-// ---------------------------------------------------------------- players
-
 bool DataStore::playerExists(const QString &id) const
 {
     return std::any_of(m_players.cbegin(), m_players.cend(),
@@ -347,8 +345,6 @@ QStringList DataStore::teams() const
     return list;
 }
 
-// ---------------------------------------------------------------- teams
-
 bool DataStore::teamExists(const QString &name) const
 {
     return std::any_of(m_teams.cbegin(), m_teams.cend(),
@@ -409,8 +405,6 @@ Team DataStore::findTeam(const QString &name) const
             return t;
     return {};
 }
-
-// ---------------------------------------------------------------- matches
 
 bool DataStore::matchExists(const QString &id) const
 {
@@ -520,7 +514,6 @@ bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QStr
     return false;
 }
 
-// ---------------------------------------------------------------- stats
 PlayerStats DataStore::careerTotals(const QString &playerId) const
 {
     PlayerStats total;
@@ -590,8 +583,6 @@ int DataStore::totalPoints() const
     return total;
 }
 
-// ---------------------------------------------------------------- users
-
 bool DataStore::userExists(const QString &username) const
 {
     return std::any_of(m_users.cbegin(), m_users.cend(),
@@ -611,8 +602,6 @@ User DataStore::findUser(const QString &username) const
             return u;
     return {};
 }
-
-// ---------------------------------------------------------------- seed
 
 void DataStore::seedDemoData()
 {

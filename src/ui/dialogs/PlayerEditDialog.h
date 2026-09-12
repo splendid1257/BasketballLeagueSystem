@@ -9,7 +9,6 @@ class QSpinBox;
 class QComboBox;
 class QLabel;
 
-// 新增 / 编辑球员对话框
 class PlayerEditDialog : public QDialog
 {
     Q_OBJECT
@@ -17,7 +16,7 @@ class PlayerEditDialog : public QDialog
 public:
     explicit PlayerEditDialog(const QStringList &teams, QWidget *parent = nullptr);
 
-    void setPlayer(const Player &p);  // 编辑模式填充
+    void setPlayer(const Player &p);
     Player player() const;
 
 protected:
@@ -34,5 +33,4 @@ private:
     QSpinBox *m_weight = nullptr;
     QLineEdit *m_country = nullptr;
     QLabel *m_titleLabel = nullptr;
-    bool m_editMode = false;
 };

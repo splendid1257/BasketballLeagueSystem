@@ -7,7 +7,6 @@ class StatCard;
 class QTableWidget;
 class QLabel;
 
-// 球员详情页：生涯合计数据 + 各场次出场记录
 class PlayerDetailPage : public QWidget
 {
     Q_OBJECT

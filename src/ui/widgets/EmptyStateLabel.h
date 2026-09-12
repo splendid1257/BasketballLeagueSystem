@@ -4,8 +4,6 @@
 
 class QTableWidget;
 
-// 表格空状态提示：当表格没有任何可见行时，在表格区域居中显示提示文字。
-// 自动跟随表格视口大小变化，且不拦截鼠标事件。
 class EmptyStateLabel : public QLabel
 {
     Q_OBJECT

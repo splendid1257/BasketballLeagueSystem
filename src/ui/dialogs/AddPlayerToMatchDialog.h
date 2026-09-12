@@ -9,7 +9,6 @@
 class QComboBox;
 class QSpinBox;
 
-// 向场次中添加参赛队员（选择球员 + 录入本场数据）
 class AddPlayerToMatchDialog : public QDialog
 {
     Q_OBJECT

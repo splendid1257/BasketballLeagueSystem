@@ -15,7 +15,6 @@ class TeamsPage;
 class StatsPage;
 class PlayerDetailPage;
 
-// 主窗口：左侧导航 + 顶部标题栏 + 中间分页堆栈（层次化布局）
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

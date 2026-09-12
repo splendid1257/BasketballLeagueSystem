@@ -4,7 +4,6 @@
 
 class QLabel;
 
-// 数据概览卡片：左侧彩色竖条 + 标题 + 大数值 + 副标题
 class StatCard : public QFrame
 {
     Q_OBJECT

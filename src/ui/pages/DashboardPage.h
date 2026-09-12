@@ -6,7 +6,6 @@ class DataStore;
 class StatCard;
 class QTableWidget;
 
-// 首页概览：核心指标卡片 + 近期比赛 + 得分榜
 class DashboardPage : public QWidget
 {
     Q_OBJECT

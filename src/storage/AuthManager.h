@@ -4,7 +4,7 @@
 
 class DataStore;
 
-// 账号管理：注册 / 登录，密码加盐哈希存储
+// 密码加盐哈希存储
 class AuthManager
 {
 public:

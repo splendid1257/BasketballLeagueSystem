@@ -9,7 +9,7 @@ class QDateTimeEdit;
 class QComboBox;
 class QLabel;
 
-// 新增 / 编辑场次基本信息对话框（参赛队员在“场次详情”中维护）
+// 参赛队员在“场次详情”中维护
 class MatchEditDialog : public QDialog
 {
     Q_OBJECT
@@ -17,7 +17,7 @@ class MatchEditDialog : public QDialog
 public:
     explicit MatchEditDialog(const QStringList &teams, QWidget *parent = nullptr);
 
-    void setMatch(const Match &m);  // 编辑模式填充（含已有球员数据）
+    void setMatch(const Match &m);  // 保留已有球员数据
     Match match() const;
 
 protected:
@@ -33,5 +33,4 @@ private:
 
     QVector<PlayerStats> m_team1Players;
     QVector<PlayerStats> m_team2Players;
-    bool m_editMode = false;
 };

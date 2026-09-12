@@ -81,7 +81,6 @@ PlayerEditDialog::PlayerEditDialog(const QStringList &teams, QWidget *parent)
 
 void PlayerEditDialog::setPlayer(const Player &p)
 {
-    m_editMode = true;
     m_id->setText(p.id);
     m_name->setText(p.name);
     m_age->setValue(p.age);

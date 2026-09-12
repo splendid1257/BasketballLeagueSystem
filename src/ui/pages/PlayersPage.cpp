@@ -29,7 +29,6 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     root->addWidget(title);
     root->addWidget(sub);
 
-    // 搜索 + 筛选
     auto *filters = new QHBoxLayout();
     filters->setSpacing(10);
     m_search = new QLineEdit(this);
@@ -47,7 +46,6 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     filters->addStretch();
     root->addLayout(filters);
 
-    // 操作按钮
     auto *toolbar = new QHBoxLayout();
     toolbar->setSpacing(10);
     m_countLabel = new QLabel(this);
@@ -79,7 +77,6 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     ui::autoSizeColumns(m_table, {1, 2});
     root->addWidget(m_table, 1);
 
-    // 分页
     auto *pager = new QHBoxLayout();
     pager->setSpacing(10);
     pager->addStretch();

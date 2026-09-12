@@ -7,7 +7,6 @@
 class QLineEdit;
 class QLabel;
 
-// 新增 / 编辑球队对话框
 class TeamEditDialog : public QDialog
 {
     Q_OBJECT
@@ -15,7 +14,7 @@ class TeamEditDialog : public QDialog
 public:
     explicit TeamEditDialog(QWidget *parent = nullptr);
 
-    void setTeam(const Team &t);  // 编辑模式填充
+    void setTeam(const Team &t);
     Team team() const;
 
 protected:

@@ -66,7 +66,6 @@ MatchEditDialog::MatchEditDialog(const QStringList &teams, QWidget *parent)
 
 void MatchEditDialog::setMatch(const Match &m)
 {
-    m_editMode = true;
     m_id->setText(m.id);
     m_dt->setDateTime(m.dateTime.isValid() ? m.dateTime : QDateTime::currentDateTime());
     m_loc->setText(m.location);

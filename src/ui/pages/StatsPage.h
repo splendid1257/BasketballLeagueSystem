@@ -8,7 +8,6 @@ class QTableWidget;
 class QComboBox;
 class QLabel;
 
-// 数据排行榜：得分 / 三分 / 篮板 / 扣篮 / 抢断
 class StatsPage : public QWidget
 {
     Q_OBJECT
