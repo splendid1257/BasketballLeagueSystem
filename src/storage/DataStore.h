@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QHash>
 #include <QObject>
 #include <QPair>
 #include <QStringList>
@@ -79,24 +78,13 @@ private:
     bool loadMatches();
     bool loadTeams();
     bool loadUsers();
-    bool savePlayers() const;
-    bool saveMatches() const;
-    bool saveTeams() const;
-    bool saveUsers() const;
     void seedDemoData();
     void ensureDataDir();
-    void rebuildAggregates() const;
-    void invalidateAggregates() const { m_aggDirty = true; }
 
     QVector<Player> m_players;
     QVector<Match> m_matches;
     QVector<Team> m_teams;
     QVector<User> m_users;
-
-    // 生涯合计 / 出场数缓存：一次遍历 matches 建好，任何数据变更后失效
-    mutable bool m_aggDirty = true;
-    mutable QHash<QString, PlayerStats> m_totals;
-    mutable QHash<QString, int> m_games;
 
     QString m_dataDir;
     QString m_playersFile;

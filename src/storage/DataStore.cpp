@@ -132,9 +132,9 @@ bool DataStore::load()
     return true;
 }
 
-bool DataStore::savePlayers() const
+bool DataStore::save() const
 {
-    QJsonArray arr;
+    QJsonArray playersArr;
     for (const Player &p : m_players) {
         QJsonObject o;
         o["id"] = p.id;
@@ -146,14 +146,10 @@ bool DataStore::savePlayers() const
         o["heightCm"] = p.heightCm;
         o["weightKg"] = p.weightKg;
         o["country"] = p.country;
-        arr.append(o);
+        playersArr.append(o);
     }
-    return writeJsonArray(m_playersFile, arr);
-}
 
-bool DataStore::saveMatches() const
-{
-    QJsonArray arr;
+    QJsonArray matchesArr;
     for (const Match &m : m_matches) {
         QJsonObject o;
         o["id"] = m.id;
@@ -163,43 +159,32 @@ bool DataStore::saveMatches() const
         o["team2Name"] = m.team2Name;
         o["team1Players"] = statsArrayToJson(m.team1Players);
         o["team2Players"] = statsArrayToJson(m.team2Players);
-        arr.append(o);
+        matchesArr.append(o);
     }
-    return writeJsonArray(m_matchesFile, arr);
-}
 
-bool DataStore::saveTeams() const
-{
-    QJsonArray arr;
+    QJsonArray teamsArr;
     for (const Team &t : m_teams) {
         QJsonObject o;
         o["name"] = t.name;
         o["city"] = t.city;
         o["coach"] = t.coach;
         o["arena"] = t.arena;
-        arr.append(o);
+        teamsArr.append(o);
     }
-    return writeJsonArray(m_teamsFile, arr);
-}
 
-bool DataStore::saveUsers() const
-{
-    QJsonArray arr;
+    QJsonArray usersArr;
     for (const User &u : m_users) {
         QJsonObject o;
         o["username"] = u.username;
         o["salt"] = u.salt;
         o["passwordHash"] = u.passwordHash;
-        arr.append(o);
+        usersArr.append(o);
     }
-    return writeJsonArray(m_usersFile, arr);
-}
 
-// 全量落盘：仅在载入/建种子数据时使用；日常增删改只写被改动的那一份
-bool DataStore::save() const
-{
-    invalidateAggregates();
-    return savePlayers() && saveMatches() && saveTeams() && saveUsers();
+    return writeJsonArray(m_playersFile, playersArr)
+           && writeJsonArray(m_matchesFile, matchesArr)
+           && writeJsonArray(m_teamsFile, teamsArr)
+           && writeJsonArray(m_usersFile, usersArr);
 }
 
 bool DataStore::loadPlayers()
@@ -284,8 +269,7 @@ bool DataStore::addPlayer(const Player &p)
     if (!p.isValid() || playerExists(p.id))
         return false;
     m_players.append(p);
-    invalidateAggregates();
-    savePlayers();
+    save();
     emit changed();
     return true;
 }
@@ -307,9 +291,7 @@ bool DataStore::updatePlayer(const QString &oldId, const Player &p)
                     if (s.playerId == oldId) { s.playerId = p.id; s.playerName = p.name; }
                 }
             }
-            invalidateAggregates();
-            savePlayers();
-            saveMatches();
+            save();
             emit changed();
             return true;
         }
@@ -333,9 +315,7 @@ bool DataStore::removePlayer(const QString &id)
                                             [&id](const PlayerStats &s) { return s.playerId == id; }),
                              m.team2Players.end());
     }
-    invalidateAggregates();
-    savePlayers();
-    saveMatches();
+    save();
     emit changed();
     return true;
 }
@@ -376,7 +356,7 @@ bool DataStore::addTeam(const Team &t)
     if (!t.isValid() || teamExists(t.name))
         return false;
     m_teams.append(t);
-    saveTeams();
+    save();
     emit changed();
     return true;
 }
@@ -398,10 +378,7 @@ bool DataStore::updateTeam(const QString &oldName, const Team &t)
                 if (m.team2Name == oldName)
                     m.team2Name = t.name;
             }
-            invalidateAggregates();
-            savePlayers();
-            saveMatches();
-            saveTeams();
+            save();
             emit changed();
             return true;
         }
@@ -416,7 +393,7 @@ bool DataStore::removeTeam(const QString &name)
     if (it == m_teams.end())
         return false;
     m_teams.erase(it);
-    saveTeams();
+    save();
     emit changed();
     return true;
 }
@@ -440,8 +417,7 @@ bool DataStore::addMatch(const Match &m)
     if (!m.isValid() || matchExists(m.id))
         return false;
     m_matches.append(m);
-    invalidateAggregates();
-    saveMatches();
+    save();
     emit changed();
     return true;
 }
@@ -453,8 +429,7 @@ bool DataStore::updateMatch(const QString &oldId, const Match &m)
             if (m.id != oldId && matchExists(m.id))
                 return false;
             existing = m;
-            invalidateAggregates();
-            saveMatches();
+            save();
             emit changed();
             return true;
         }
@@ -469,8 +444,7 @@ bool DataStore::removeMatch(const QString &id)
     if (it == m_matches.end())
         return false;
     m_matches.erase(it);
-    invalidateAggregates();
-    saveMatches();
+    save();
     emit changed();
     return true;
 }
@@ -494,8 +468,7 @@ bool DataStore::addPlayerToMatch(const QString &matchId, int teamNo, const Playe
         if (dup)
             return false;
         list.append(s);
-        invalidateAggregates();
-        saveMatches();
+        save();
         emit changed();
         return true;
     }
@@ -514,8 +487,7 @@ bool DataStore::removePlayerFromMatch(const QString &matchId, int teamNo, const 
                    list.end());
         if (list.size() == before)
             return false;
-        invalidateAggregates();
-        saveMatches();
+        save();
         emit changed();
         return true;
     }
@@ -532,8 +504,7 @@ bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QStr
         for (PlayerStats &existing : list) {
             if (existing.playerId == playerId) {
                 existing = s;
-                invalidateAggregates();
-                saveMatches();
+                save();
                 emit changed();
                 return true;
             }
@@ -543,52 +514,41 @@ bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QStr
     return false;
 }
 
-void DataStore::rebuildAggregates() const
+PlayerStats DataStore::careerTotals(const QString &playerId) const
 {
-    m_totals.clear();
-    m_games.clear();
-    auto add = [this](const QVector<PlayerStats> &list) {
+    PlayerStats total;
+    total.playerId = playerId;
+    total.playerName = findPlayer(playerId).name;
+
+    auto addList = [&total, &playerId](const QVector<PlayerStats> &list) {
         for (const PlayerStats &s : list) {
-            PlayerStats &t = m_totals[s.playerId];
-            t.playerId = s.playerId;
-            t.playerName = s.playerName;
-            t.threePointers += s.threePointers;
-            t.rebounds += s.rebounds;
-            t.dunks += s.dunks;
-            t.steals += s.steals;
-            m_games[s.playerId] += 1;
+            if (s.playerId != playerId)
+                continue;
+            total.threePointers += s.threePointers;
+            total.rebounds += s.rebounds;
+            total.dunks += s.dunks;
+            total.steals += s.steals;
         }
     };
     for (const Match &m : m_matches) {
-        add(m.team1Players);
-        add(m.team2Players);
+        addList(m.team1Players);
+        addList(m.team2Players);
     }
-    for (const Player &p : m_players) {
-        // 姓名以球员档案为准，覆盖统计中的冗余副本
-        if (m_totals.contains(p.id))
-            m_totals[p.id].playerName = p.name;
-    }
-    m_aggDirty = false;
-}
-
-PlayerStats DataStore::careerTotals(const QString &playerId) const
-{
-    if (m_aggDirty)
-        rebuildAggregates();
-    PlayerStats t = m_totals.value(playerId);
-    if (t.playerId.isEmpty()) {
-        // 无出场记录时仍需返回编号与姓名
-        t.playerId = playerId;
-        t.playerName = findPlayer(playerId).name;
-    }
-    return t;
+    return total;
 }
 
 int DataStore::playerGameCount(const QString &playerId) const
 {
-    if (m_aggDirty)
-        rebuildAggregates();
-    return m_games.value(playerId);
+    int games = 0;
+    for (const Match &m : m_matches) {
+        for (const PlayerStats &s : m.team1Players)
+            if (s.playerId == playerId)
+                ++games;
+        for (const PlayerStats &s : m.team2Players)
+            if (s.playerId == playerId)
+                ++games;
+    }
+    return games;
 }
 
 QVector<QPair<QString, PlayerStats>> DataStore::playerMatchLog(const QString &playerId) const
@@ -646,7 +606,7 @@ bool DataStore::userExists(const QString &username) const
 void DataStore::addUser(const User &u)
 {
     m_users.append(u);
-    saveUsers();
+    save();
 }
 
 User DataStore::findUser(const QString &username) const
