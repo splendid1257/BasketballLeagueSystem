@@ -22,8 +22,6 @@ public:
     bool load();
     bool save() const;
 
-    QString dataDir() const { return m_dataDir; }
-
     const QVector<Player> &players() const { return m_players; }
     bool playerExists(const QString &id) const;
     bool addPlayer(const Player &p);
@@ -32,7 +30,6 @@ public:
     Player findPlayer(const QString &id) const;  // 不存在返回默认对象
     QStringList teams() const;  // 全部球队名（球队档案 + 球员所属，去重排序）
 
-    const QVector<Team> &teamRecords() const { return m_teams; }
     bool teamExists(const QString &name) const;
     bool addTeam(const Team &t);
     bool updateTeam(const QString &oldName, const Team &t);
@@ -65,7 +62,6 @@ public:
 
     int totalPoints() const;
 
-    const QVector<User> &users() const { return m_users; }
     bool userExists(const QString &username) const;
     void addUser(const User &u);
     User findUser(const QString &username) const;

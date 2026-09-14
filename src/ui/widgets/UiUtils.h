@@ -70,7 +70,6 @@ inline QTableWidgetItem *item(const QString &text,
 
 inline QColor gold() { return QColor(QStringLiteral("#FDB927")); }
 inline QColor dim() { return QColor(QStringLiteral("#8A97AC")); }
-inline QColor red() { return QColor(QStringLiteral("#FF6B7A")); }
 inline QColor green() { return QColor(QStringLiteral("#37D67A")); }
 
 }  // namespace ui
