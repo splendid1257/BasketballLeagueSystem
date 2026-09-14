@@ -83,7 +83,7 @@ void StatsPage::reload()
     m_table->setRowCount(rows.size());
     for (int r = 0; r < rows.size(); ++r) {
         const Player p = m_store->findPlayer(rows.at(r).first);
-        const int games = m_store->playerMatchLog(p.id).size();
+        const int games = m_store->playerGameCount(p.id);
         const QColor medal = (r == 0) ? ui::gold() : (r < 3 ? ui::green() : ui::dim());
 
         m_table->setItem(r, 0, ui::item(QString::number(r + 1), Qt::AlignCenter, medal));

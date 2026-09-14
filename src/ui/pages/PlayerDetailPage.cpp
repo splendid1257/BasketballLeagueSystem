@@ -81,7 +81,7 @@ void PlayerDetailPage::refresh()
     const Player p = m_store->findPlayer(m_playerId);
     m_playerName = p.name;
     const PlayerStats total = m_store->careerTotals(m_playerId);
-    const int games = m_store->playerMatchLog(m_playerId).size();
+    const int games = m_store->playerGameCount(m_playerId);
 
     m_name->setText(p.name.isEmpty() ? QStringLiteral("（已删除的球员）") : p.name);
     QStringList bits;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QObject>
 #include <QPair>
 #include <QStringList>
@@ -54,6 +55,8 @@ public:
 
     // 跨所有场次合计
     PlayerStats careerTotals(const QString &playerId) const;
+    // 球员出场场次数
+    int playerGameCount(const QString &playerId) const;
     // 球员出场记录：<场次编号, 该场数据>
     QVector<QPair<QString, PlayerStats>> playerMatchLog(const QString &playerId) const;
 
@@ -78,11 +81,18 @@ private:
     bool loadUsers();
     void seedDemoData();
     void ensureDataDir();
+    void rebuildAggregates() const;
+    void invalidateAggregates() const { m_aggDirty = true; }
 
     QVector<Player> m_players;
     QVector<Match> m_matches;
     QVector<Team> m_teams;
     QVector<User> m_users;
+
+    // 生涯合计 / 出场数缓存：一次遍历 matches 建好，任何数据变更后失效
+    mutable bool m_aggDirty = true;
+    mutable QHash<QString, PlayerStats> m_totals;
+    mutable QHash<QString, int> m_games;
 
     QString m_dataDir;
     QString m_playersFile;

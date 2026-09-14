@@ -133,6 +133,8 @@ bool DataStore::load()
 
 bool DataStore::save() const
 {
+    invalidateAggregates();
+
     QJsonArray playersArr;
     for (const Player &p : m_players) {
         QJsonObject o;
@@ -514,27 +516,50 @@ bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QStr
     return false;
 }
 
-PlayerStats DataStore::careerTotals(const QString &playerId) const
+void DataStore::rebuildAggregates() const
 {
-    PlayerStats total;
-    const Player p = findPlayer(playerId);
-    total.playerId = playerId;
-    total.playerName = p.name;
-    auto accumulate = [&total, &playerId](const QVector<PlayerStats> &list) {
+    m_totals.clear();
+    m_games.clear();
+    auto add = [this](const QVector<PlayerStats> &list) {
         for (const PlayerStats &s : list) {
-            if (s.playerId != playerId)
-                continue;
-            total.threePointers += s.threePointers;
-            total.rebounds += s.rebounds;
-            total.dunks += s.dunks;
-            total.steals += s.steals;
+            PlayerStats &t = m_totals[s.playerId];
+            t.playerId = s.playerId;
+            t.playerName = s.playerName;
+            t.threePointers += s.threePointers;
+            t.rebounds += s.rebounds;
+            t.dunks += s.dunks;
+            t.steals += s.steals;
+            m_games[s.playerId] += 1;
         }
     };
     for (const Match &m : m_matches) {
-        accumulate(m.team1Players);
-        accumulate(m.team2Players);
+        add(m.team1Players);
+        add(m.team2Players);
     }
-    return total;
+    for (const Player &p : m_players) {
+        if (m_totals.contains(p.id))
+            m_totals[p.id].playerName = p.name;
+    }
+    m_aggDirty = false;
+}
+
+PlayerStats DataStore::careerTotals(const QString &playerId) const
+{
+    if (m_aggDirty)
+        rebuildAggregates();
+    PlayerStats t = m_totals.value(playerId);
+    if (t.playerId.isEmpty()) {
+        t.playerId = playerId;
+        t.playerName = findPlayer(playerId).name;
+    }
+    return t;
+}
+
+int DataStore::playerGameCount(const QString &playerId) const
+{
+    if (m_aggDirty)
+        rebuildAggregates();
+    return m_games.value(playerId);
 }
 
 QVector<QPair<QString, PlayerStats>> DataStore::playerMatchLog(const QString &playerId) const

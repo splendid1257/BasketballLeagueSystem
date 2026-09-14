@@ -191,7 +191,7 @@ void PlayersPage::renderPage()
     for (int i = 0; i < rows; ++i) {
         const Player &p = m_filtered.at(start + i);
         const PlayerStats t = m_store->careerTotals(p.id);
-        const int games = m_store->playerMatchLog(p.id).size();
+        const int games = m_store->playerGameCount(p.id);
 
         m_table->setItem(i, 0, ui::item(p.id, Qt::AlignCenter, ui::gold()));
         m_table->setItem(i, 1, ui::item(p.name, Qt::AlignLeft));

@@ -188,7 +188,7 @@ void TeamsPage::onTeamSelected()
     for (int r = 0; r < roster.size(); ++r) {
         const Player &p = roster.at(r);
         const PlayerStats t = m_store->careerTotals(p.id);
-        const int games = m_store->playerMatchLog(p.id).size();
+        const int games = m_store->playerGameCount(p.id);
         m_roster->setItem(r, 0, ui::item(p.id, Qt::AlignCenter, ui::gold()));
         m_roster->setItem(r, 1, ui::item(p.name, Qt::AlignLeft));
         m_roster->setItem(r, 2, ui::item(p.number > 0 ? QString::number(p.number) : QStringLiteral("-")));
