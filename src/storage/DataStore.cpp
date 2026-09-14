@@ -105,7 +105,7 @@ void DataStore::ensureDataDir()
 bool DataStore::load()
 {
     ensureDataDir();
-    // 两个文件都没有才算全新数据，否则不能覆盖用户已有内容
+    // 两份数据文件均不存在时方视为首次运行，避免覆盖已有数据
     const bool fresh = !QFile::exists(m_playersFile) && !QFile::exists(m_matchesFile);
 
     loadPlayers();
@@ -117,7 +117,7 @@ bool DataStore::load()
         seedDemoData();
         save();
     } else if (m_teams.isEmpty()) {
-        // 迁移：旧数据没有球队档案时，从球员所属球队补齐
+        // 迁移：旧数据无球队档案时，按球员所属球队补建
         for (const Player &p : m_players) {
             const QString n = p.team.trimmed();
             if (!n.isEmpty() && !teamExists(n)) {
@@ -294,7 +294,7 @@ bool DataStore::updatePlayer(const QString &oldId, const Player &p)
 {
     for (Player &existing : m_players) {
         if (existing.id == oldId) {
-            // 若改了编号，检查新编号是否与他人冲突
+            // 变更编号时校验唯一性
             if (p.id != oldId && playerExists(p.id))
                 return false;
             existing = p;
@@ -564,7 +564,7 @@ void DataStore::rebuildAggregates() const
         add(m.team2Players);
     }
     for (const Player &p : m_players) {
-        // 姓名以球员档案为准（球员可能改过名）
+        // 姓名以球员档案为准，覆盖统计中的冗余副本
         if (m_totals.contains(p.id))
             m_totals[p.id].playerName = p.name;
     }
@@ -577,7 +577,7 @@ PlayerStats DataStore::careerTotals(const QString &playerId) const
         rebuildAggregates();
     PlayerStats t = m_totals.value(playerId);
     if (t.playerId.isEmpty()) {
-        // 没出场记录的球员也要带上编号和姓名
+        // 无出场记录时仍需返回编号与姓名
         t.playerId = playerId;
         t.playerName = findPlayer(playerId).name;
     }

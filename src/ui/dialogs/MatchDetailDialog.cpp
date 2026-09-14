@@ -245,7 +245,7 @@ void MatchDetailDialog::editMatchInfo()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
         return;
     }
-    // 编号可能被改过，之后按新编号查找
+    // 编号可能已变更，后续按新编号检索
     m_matchId = m.id;
     reload();
 }

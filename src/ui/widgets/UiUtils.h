@@ -42,7 +42,7 @@ inline void alignHeader(QTableWidget *t, int column, Qt::Alignment align)
         h->setTextAlignment(align | Qt::AlignVCenter);
 }
 
-// 批量填表前调用：先关掉列宽自适应，否则每填一格都会重算整列
+// 填表前关闭列宽自适应，避免逐格触发整列重算
 inline void beginTableFill(QTableWidget *t)
 {
     t->setUpdatesEnabled(false);

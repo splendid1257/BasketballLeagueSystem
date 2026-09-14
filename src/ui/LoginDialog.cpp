@@ -217,7 +217,7 @@ void LoginDialog::doRegister()
     }
 }
 
-// 实时校验：边输入边给出具体的不合法原因；全部通过时显示绿色提示
+    // 实时校验：输入时提示具体不合法项，全部通过后给出通过提示
 bool LoginDialog::validateRegister()
 {
     const QString user = m_regUser->text().trimmed();

@@ -10,7 +10,7 @@ class AuthManager
 public:
     explicit AuthManager(DataStore *store);
 
-    // 成功返回 true；失败时写入 error 文案
+    // 成功返回 true，失败时写入 error 信息
     bool registerUser(const QString &username, const QString &password, QString *error);
     bool login(const QString &username, const QString &password, QString *error);
 

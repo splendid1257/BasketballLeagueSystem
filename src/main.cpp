@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     MainWindow window(&store, login.username());
 
-    // 退出登录：隐藏主窗口，重新弹出登录框
+    // 退出登录：隐藏主窗口并重新显示登录框
     QObject::connect(&window, &MainWindow::logoutRequested, &app, [&]() {
         window.hide();
         LoginDialog again(&auth);

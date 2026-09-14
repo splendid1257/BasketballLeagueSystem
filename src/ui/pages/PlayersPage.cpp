@@ -138,7 +138,7 @@ void PlayersPage::rebuildFilters()
     }
     positions.sort();
 
-    // 选项没变就不重建，省掉 clear + 重填带来的控件重排与信号开销
+    // 选项未变化时跳过重建，避免 clear/重填引起的控件重排
     if (comboMatches(m_teamFilter, teamNames) && comboMatches(m_positionFilter, positions))
         return;
 
