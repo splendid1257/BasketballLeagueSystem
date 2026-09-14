@@ -75,6 +75,7 @@ MatchesPage::MatchesPage(DataStore *store, QWidget *parent)
 void MatchesPage::refresh()
 {
     const auto &matches = m_store->matches();
+    ui::beginTableFill(m_table);
     m_table->setRowCount(matches.size());
     for (int r = 0; r < matches.size(); ++r) {
         const Match &m = matches.at(r);
@@ -86,6 +87,7 @@ void MatchesPage::refresh()
         m_table->setItem(r, 5, ui::item(m.scoreText(), Qt::AlignCenter, ui::green()));
         m_table->setItem(r, 6, ui::item(m.winnerText(), Qt::AlignLeft));
     }
+    ui::endTableFill(m_table, {2, 3, 4});
     applyFilter();
 }
 

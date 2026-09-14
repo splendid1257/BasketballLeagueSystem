@@ -17,6 +17,7 @@ public:
 private:
     QWidget *buildTeamPanel(int teamNo, QTableWidget *&table);
     void reload();
+    void editMatchInfo();
     void addPlayer(int teamNo);
     void removePlayer(int teamNo);
     void editStats(int teamNo);

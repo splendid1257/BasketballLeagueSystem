@@ -3,6 +3,8 @@
 #include "model/Match.h"
 #include "storage/DataStore.h"
 #include "ui/dialogs/AddPlayerToMatchDialog.h"
+#include "ui/dialogs/MatchEditDialog.h"
+#include "ui/widgets/UiUtils.h"
 
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -40,6 +42,7 @@ QTableWidget *makeStatsTable(QWidget *parent)
 
 void fillStatsTable(QTableWidget *table, const QVector<PlayerStats> &list)
 {
+    ui::beginTableFill(table);
     table->setRowCount(list.size());
     for (int r = 0; r < list.size(); ++r) {
         const PlayerStats &s = list.at(r);
@@ -59,6 +62,7 @@ void fillStatsTable(QTableWidget *table, const QVector<PlayerStats> &list)
         pts->setForeground(QColor(QStringLiteral("#FDB927")));
         table->setItem(r, 6, pts);
     }
+    ui::endTableFill(table, {1});
 }
 
 // 自由函数：一次性对话框，无需成员与信号
@@ -138,9 +142,16 @@ MatchDetailDialog::MatchDetailDialog(DataStore *store, const QString &matchId, Q
     m_score->setObjectName(QStringLiteral("CardValue"));
     m_meta = new QLabel(header);
     m_meta->setObjectName(QStringLiteral("Muted"));
-    hl->addWidget(m_title);
+
+    auto *editInfoBtn = new QPushButton(QStringLiteral("编辑场次信息"), header);
+    auto *headRow = new QHBoxLayout();
+    headRow->addWidget(m_title);
+    headRow->addStretch();
+    headRow->addWidget(editInfoBtn);
+    hl->addLayout(headRow);
     hl->addWidget(m_score);
     hl->addWidget(m_meta);
+    connect(editInfoBtn, &QPushButton::clicked, this, &MatchDetailDialog::editMatchInfo);
     root->addWidget(header);
 
     auto *panels = new QHBoxLayout();
@@ -215,6 +226,27 @@ void MatchDetailDialog::reload()
 
     fillStatsTable(m_table1, m.team1Players);
     fillStatsTable(m_table2, m.team2Players);
+}
+
+void MatchDetailDialog::editMatchInfo()
+{
+    MatchEditDialog dlg(m_store->teams(), this);
+    dlg.setMatch(m_store->findMatch(m_matchId));
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+
+    const Match m = dlg.match();
+    if (m.id != m_matchId && m_store->matchExists(m.id)) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+                             QStringLiteral("场次编号 %1 已存在").arg(m.id));
+        return;
+    }
+    if (!m_store->updateMatch(m_matchId, m)) {
+        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
+        return;
+    }
+    m_matchId = m.id;
+    reload();
 }
 
 void MatchDetailDialog::addPlayer(int teamNo)

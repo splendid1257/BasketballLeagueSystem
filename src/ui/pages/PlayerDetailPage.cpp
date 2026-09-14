@@ -107,6 +107,7 @@ void PlayerDetailPage::refresh()
 
     const auto log = m_store->playerMatchLog(m_playerId);
     m_log->setRowCount(log.size());
+    ui::beginTableFill(m_log);
     for (int r = 0; r < log.size(); ++r) {
         const QString matchId = log.at(r).first;
         const PlayerStats &s = log.at(r).second;
@@ -122,4 +123,5 @@ void PlayerDetailPage::refresh()
         m_log->setItem(r, 7, ui::item(QString::number(s.steals)));
         m_log->setItem(r, 8, ui::item(QString::number(s.points()), Qt::AlignCenter, ui::green()));
     }
+    ui::endTableFill(m_log, {3});
 }

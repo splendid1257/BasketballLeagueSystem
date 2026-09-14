@@ -42,6 +42,22 @@ inline void alignHeader(QTableWidget *t, int column, Qt::Alignment align)
         h->setTextAlignment(align | Qt::AlignVCenter);
 }
 
+// 批量填表前调用：暂停重绘并把列宽临时改为 Interactive，避免每填一格都触发
+// 一次 ResizeToContents 整列重算（那是 O(n²) 的元凶）
+inline void beginTableFill(QTableWidget *t)
+{
+    t->setUpdatesEnabled(false);
+    for (int c = 0; c < t->columnCount(); ++c)
+        t->horizontalHeader()->setSectionResizeMode(c, QHeaderView::Interactive);
+}
+
+// 批量填表后调用：恢复自适应列宽（只重算一次）并重绘
+inline void endTableFill(QTableWidget *t, std::initializer_list<int> stretchCols = {})
+{
+    autoSizeColumns(t, stretchCols);
+    t->setUpdatesEnabled(true);
+}
+
 inline QTableWidgetItem *item(const QString &text,
                               int align = Qt::AlignCenter,
                               const QColor &color = QColor())

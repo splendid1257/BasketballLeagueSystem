@@ -69,7 +69,7 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     ui::setupTable(m_table, {QStringLiteral("编号"), QStringLiteral("姓名"),
                              QStringLiteral("球队"), QStringLiteral("号码"),
                              QStringLiteral("位置"), QStringLiteral("年龄"),
-                             QStringLiteral("身高"), QStringLiteral("体重"),
+                             QStringLiteral("身高(cm)"), QStringLiteral("体重(kg)"),
                              QStringLiteral("国籍"), QStringLiteral("出场"),
                              QStringLiteral("得分")});
     for (int c = 0; c < m_table->columnCount(); ++c)
@@ -187,6 +187,7 @@ void PlayersPage::renderPage()
     const int rows = qMin(m_pageSize, total - start);
 
     m_table->setRowCount(qMax(0, rows));
+    ui::beginTableFill(m_table);
     for (int i = 0; i < rows; ++i) {
         const Player &p = m_filtered.at(start + i);
         const PlayerStats t = m_store->careerTotals(p.id);
@@ -205,6 +206,7 @@ void PlayersPage::renderPage()
         m_table->setItem(i, 9, ui::item(QString::number(games)));
         m_table->setItem(i, 10, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
     }
+    ui::endTableFill(m_table, {1, 2});
 
     m_countLabel->setText(QStringLiteral("共 %1 名球员 · 第 %2/%3 页")
                               .arg(total)

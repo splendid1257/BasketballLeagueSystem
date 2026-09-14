@@ -88,6 +88,7 @@ void DashboardPage::refresh()
         return a.dateTime > b.dateTime;
     });
     const int recentCount = qMin(6, matches.size());
+    ui::beginTableFill(m_recent);
     m_recent->setRowCount(recentCount);
     for (int r = 0; r < recentCount; ++r) {
         const Match &m = matches.at(r);
@@ -98,13 +99,11 @@ void DashboardPage::refresh()
         m_recent->setItem(r, 2, ui::item(m.scoreText(), Qt::AlignCenter, ui::gold()));
         m_recent->setItem(r, 3, ui::item(m.winnerText(), Qt::AlignLeft, ui::green()));
     }
-    m_recent->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    m_recent->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_recent->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    m_recent->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    ui::endTableFill(m_recent, {1});
 
     const auto board = m_store->leaderboard(DataStore::Board::Points);
     const int topN = qMin(5, board.size());
+    ui::beginTableFill(m_topScorers);
     m_topScorers->setRowCount(topN);
     for (int r = 0; r < topN; ++r) {
         const Player p = m_store->findPlayer(board.at(r).first);
@@ -114,8 +113,5 @@ void DashboardPage::refresh()
         m_topScorers->setItem(r, 2, ui::item(p.team, Qt::AlignLeft, ui::dim()));
         m_topScorers->setItem(r, 3, ui::item(QString::number(board.at(r).second), Qt::AlignCenter, ui::gold()));
     }
-    m_topScorers->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    m_topScorers->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_topScorers->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    m_topScorers->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    ui::endTableFill(m_topScorers, {1});
 }

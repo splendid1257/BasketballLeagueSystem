@@ -1,6 +1,7 @@
 #include "ui/pages/TeamsPage.h"
 
 #include "storage/DataStore.h"
+#include "ui/dialogs/PlayerEditDialog.h"
 #include "ui/dialogs/TeamEditDialog.h"
 #include "ui/widgets/UiUtils.h"
 
@@ -76,16 +77,24 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     m_roster = new QTableWidget(rightCard);
     ui::setupTable(m_roster, {QStringLiteral("编号"), QStringLiteral("姓名"),
                               QStringLiteral("号码"), QStringLiteral("位置"),
-                              QStringLiteral("年龄"), QStringLiteral("身高"),
-                              QStringLiteral("体重"), QStringLiteral("国籍"),
+                              QStringLiteral("年龄"), QStringLiteral("身高(cm)"),
+                              QStringLiteral("体重(kg)"), QStringLiteral("国籍"),
                               QStringLiteral("出场"), QStringLiteral("总得分")});
     for (int c = 0; c < m_roster->columnCount(); ++c)
         ui::alignHeader(m_roster, c, c == 1 ? Qt::AlignLeft : Qt::AlignCenter);
     ui::autoSizeColumns(m_roster, {1});
-    rv->addWidget(m_teamTitle);
     rv->addWidget(m_teamMeta);
     rv->addSpacing(6);
     rv->addWidget(m_roster, 1);
+
+    auto *rHead = new QHBoxLayout();
+    rHead->addWidget(m_teamTitle);
+    rHead->addStretch();
+    auto *editPlayerBtn = new QPushButton(QStringLiteral("编辑球员"), rightCard);
+    rHead->addWidget(editPlayerBtn);
+    rv->insertLayout(0, rHead);
+    connect(editPlayerBtn, &QPushButton::clicked, this, &TeamsPage::onEditPlayer);
+    connect(m_roster, &QTableWidget::doubleClicked, this, &TeamsPage::onEditPlayer);
     columns->addWidget(rightCard, 1);
 
     root->addLayout(columns, 1);
@@ -175,6 +184,7 @@ void TeamsPage::onTeamSelected()
     m_teamMeta->setText(bits.join(QStringLiteral(" · ")));
 
     m_roster->setRowCount(roster.size());
+    ui::beginTableFill(m_roster);
     for (int r = 0; r < roster.size(); ++r) {
         const Player &p = roster.at(r);
         const PlayerStats t = m_store->careerTotals(p.id);
@@ -191,6 +201,29 @@ void TeamsPage::onTeamSelected()
         m_roster->setItem(r, 8, ui::item(QString::number(games)));
         m_roster->setItem(r, 9, ui::item(QString::number(t.points()), Qt::AlignCenter, ui::green()));
     }
+    ui::endTableFill(m_roster, {1});
+}
+
+void TeamsPage::onEditPlayer()
+{
+    const int row = m_roster->currentRow();
+    if (row < 0 || !m_roster->item(row, 0)) {
+        QMessageBox::information(this, QStringLiteral("提示"), QStringLiteral("请先选中一名球员"));
+        return;
+    }
+    const QString id = m_roster->item(row, 0)->text();
+    PlayerEditDialog dlg(m_store->teams(), this);
+    dlg.setPlayer(m_store->findPlayer(id));
+    if (dlg.exec() != QDialog::Accepted)
+        return;
+    const Player p = dlg.player();
+    if (p.id != id && m_store->playerExists(p.id)) {
+        QMessageBox::warning(this, QStringLiteral("提示"),
+                             QStringLiteral("球员编号 %1 已存在").arg(p.id));
+        return;
+    }
+    if (!m_store->updatePlayer(id, p))
+        QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
 }
 
 void TeamsPage::onAddTeam()

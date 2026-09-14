@@ -22,6 +22,7 @@ private:
     void onAddTeam();
     void onEditTeam();
     void onDeleteTeam();
+    void onEditPlayer();
 
     DataStore *m_store = nullptr;
     QListWidget *m_teamList = nullptr;

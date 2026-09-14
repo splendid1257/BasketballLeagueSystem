@@ -41,8 +41,8 @@ StatsPage::StatsPage(DataStore *store, QWidget *parent)
     m_table = new QTableWidget(this);
     ui::setupTable(m_table, {QStringLiteral("排名"), QStringLiteral("球员"),
                              QStringLiteral("球队"), QStringLiteral("位置"),
-                             QStringLiteral("年龄"), QStringLiteral("身高"),
-                             QStringLiteral("体重"), QStringLiteral("出场"),
+                             QStringLiteral("年龄"), QStringLiteral("身高(cm)"),
+                             QStringLiteral("体重(kg)"), QStringLiteral("出场"),
                              QStringLiteral("数值")});
     for (int c = 0; c < m_table->columnCount(); ++c)
         ui::alignHeader(m_table, c, (c == 1 || c == 2) ? Qt::AlignLeft : Qt::AlignCenter);
@@ -79,6 +79,7 @@ void StatsPage::reload()
     m_subtitle->setText(unit + QStringLiteral(" · 按降序排列"));
 
     const auto rows = m_store->leaderboard(board);
+    ui::beginTableFill(m_table);
     m_table->setRowCount(rows.size());
     for (int r = 0; r < rows.size(); ++r) {
         const Player p = m_store->findPlayer(rows.at(r).first);
@@ -95,4 +96,5 @@ void StatsPage::reload()
         m_table->setItem(r, 7, ui::item(QString::number(games)));
         m_table->setItem(r, 8, ui::item(QString::number(rows.at(r).second), Qt::AlignCenter, ui::gold()));
     }
+    ui::endTableFill(m_table, {1, 2});
 }
