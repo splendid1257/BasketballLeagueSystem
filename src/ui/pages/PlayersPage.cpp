@@ -14,22 +14,6 @@
 #include <QTableWidget>
 #include <QVBoxLayout>
 
-namespace {
-
-// 下拉框当前选项（跳过第 0 项“全部…”）是否与目标列表一致
-bool comboMatches(const QComboBox *box, const QStringList &values)
-{
-    if (box->count() != values.size() + 1)
-        return false;
-    for (int i = 0; i < values.size(); ++i) {
-        if (box->itemData(i + 1).toString() != values.at(i))
-            return false;
-    }
-    return true;
-}
-
-}  // namespace
-
 PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     : QWidget(parent)
     , m_store(store)
@@ -129,19 +113,6 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
 
 void PlayersPage::rebuildFilters()
 {
-    const QStringList teamNames = m_store->teams();
-
-    QStringList positions;
-    for (const Player &p : m_store->players()) {
-        if (!p.position.isEmpty() && !positions.contains(p.position))
-            positions.append(p.position);
-    }
-    positions.sort();
-
-    // 选项未变化时跳过重建，避免 clear/重填引起的控件重排
-    if (comboMatches(m_teamFilter, teamNames) && comboMatches(m_positionFilter, positions))
-        return;
-
     const QString prevTeam = m_teamFilter->currentData().toString();
     const QString prevPos = m_positionFilter->currentData().toString();
 
@@ -150,9 +121,15 @@ void PlayersPage::rebuildFilters()
 
     m_teamFilter->clear();
     m_teamFilter->addItem(QStringLiteral("全部球队"), QString());
-    for (const QString &t : teamNames)
+    for (const QString &t : m_store->teams())
         m_teamFilter->addItem(t, t);
 
+    QStringList positions;
+    for (const Player &p : m_store->players()) {
+        if (!p.position.isEmpty() && !positions.contains(p.position))
+            positions.append(p.position);
+    }
+    positions.sort();
     m_positionFilter->clear();
     m_positionFilter->addItem(QStringLiteral("全部位置"), QString());
     for (const QString &pos : positions)
