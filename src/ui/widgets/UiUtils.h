@@ -42,8 +42,7 @@ inline void alignHeader(QTableWidget *t, int column, Qt::Alignment align)
         h->setTextAlignment(align | Qt::AlignVCenter);
 }
 
-// 批量填表前调用：暂停重绘并把列宽临时改为 Interactive，避免每填一格都触发
-// 一次 ResizeToContents 整列重算（那是 O(n²) 的元凶）
+// 批量填表前调用：先关掉列宽自适应，否则每填一格都会重算整列
 inline void beginTableFill(QTableWidget *t)
 {
     t->setUpdatesEnabled(false);
@@ -51,7 +50,7 @@ inline void beginTableFill(QTableWidget *t)
         t->horizontalHeader()->setSectionResizeMode(c, QHeaderView::Interactive);
 }
 
-// 批量填表后调用：恢复自适应列宽（只重算一次）并重绘
+// 批量填表后调用：恢复自适应列宽并重绘
 inline void endTableFill(QTableWidget *t, std::initializer_list<int> stretchCols = {})
 {
     autoSizeColumns(t, stretchCols);

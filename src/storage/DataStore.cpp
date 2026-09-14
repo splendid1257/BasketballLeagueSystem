@@ -105,6 +105,7 @@ void DataStore::ensureDataDir()
 bool DataStore::load()
 {
     ensureDataDir();
+    // 两个文件都没有才算全新数据，否则不能覆盖用户已有内容
     const bool fresh = !QFile::exists(m_playersFile) && !QFile::exists(m_matchesFile);
 
     loadPlayers();
@@ -563,6 +564,7 @@ void DataStore::rebuildAggregates() const
         add(m.team2Players);
     }
     for (const Player &p : m_players) {
+        // 姓名以球员档案为准（球员可能改过名）
         if (m_totals.contains(p.id))
             m_totals[p.id].playerName = p.name;
     }
@@ -575,6 +577,7 @@ PlayerStats DataStore::careerTotals(const QString &playerId) const
         rebuildAggregates();
     PlayerStats t = m_totals.value(playerId);
     if (t.playerId.isEmpty()) {
+        // 没出场记录的球员也要带上编号和姓名
         t.playerId = playerId;
         t.playerName = findPlayer(playerId).name;
     }

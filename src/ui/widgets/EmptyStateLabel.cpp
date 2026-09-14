@@ -8,6 +8,7 @@ EmptyStateLabel::EmptyStateLabel(QTableWidget *table, QWidget *parent)
     , m_table(table)
 {
     Q_UNUSED(parent);
+    // 挂在表格视口上并让鼠标穿透，才能盖住表格又不挡操作
     setAlignment(Qt::AlignCenter);
     setWordWrap(true);
     setAttribute(Qt::WA_TransparentForMouseEvents);
