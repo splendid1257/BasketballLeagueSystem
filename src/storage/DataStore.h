@@ -79,6 +79,10 @@ private:
     bool loadMatches();
     bool loadTeams();
     bool loadUsers();
+    bool savePlayers() const;
+    bool saveMatches() const;
+    bool saveTeams() const;
+    bool saveUsers() const;
     void seedDemoData();
     void ensureDataDir();
     void rebuildAggregates() const;
