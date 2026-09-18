@@ -9,6 +9,8 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+// 仅收集录入并暴露结果（teamNo/stats），不写入存储；
+// candidates 已由调用方剔除本场在册球员，避免重复报名
 AddPlayerToMatchDialog::AddPlayerToMatchDialog(const QVector<Player> &candidates,
                                                const QString &team1Name,
                                                const QString &team2Name,
@@ -32,23 +34,28 @@ AddPlayerToMatchDialog::AddPlayerToMatchDialog(const QVector<Player> &candidates
     form->setSpacing(12);
     form->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
+    // userData 存球队编号（1/2），teamNo() 直接读取
     m_team = new QComboBox(this);
     m_team->addItem(team1Name, 1);
     m_team->addItem(team2Name, 2);
     m_team->setCurrentIndex(presetTeam == 2 ? 1 : 0);
 
+    // userData 存球员 id；显示文本“姓名（编号）· 球队”仅供阅读，
+    // stats() 按“（”截取姓名片段，该格式不可随意更改
     m_player = new QComboBox(this);
     for (const Player &p : candidates) {
         const QString label = QStringLiteral("%1（%2）· %3")
                                   .arg(p.name, p.id, p.team.isEmpty() ? QStringLiteral("无球队") : p.team);
         m_player->addItem(label, p.id);
     }
+    // 候选为空时禁用选择，杜绝提交空结果
     m_player->setEnabled(!candidates.isEmpty());
 
     m_tp = new QSpinBox(this);
     m_rb = new QSpinBox(this);
     m_dk = new QSpinBox(this);
     m_st = new QSpinBox(this);
+    // 单场单项统计上限 200，约束非法输入
     for (QSpinBox *sb : {m_tp, m_rb, m_dk, m_st})
         sb->setRange(0, 200);
 
@@ -83,6 +90,7 @@ int AddPlayerToMatchDialog::teamNo() const
     return m_team->currentData().toInt();
 }
 
+// 返回由当前选择构建的本场数据；姓名字段从显示文本截取，避免重复存储
 PlayerStats AddPlayerToMatchDialog::stats() const
 {
     PlayerStats s;
@@ -95,6 +103,7 @@ PlayerStats AddPlayerToMatchDialog::stats() const
     return s;
 }
 
+// 未选球员时拦截提交，防止产生 playerId 为空的脏记录
 void AddPlayerToMatchDialog::accept()
 {
     if (m_player->currentData().toString().isEmpty()) {

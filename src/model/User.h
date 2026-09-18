@@ -2,6 +2,7 @@
 
 #include <QString>
 
+// 认证凭据：仅存 salt 与哈希，绝不落地明文密码
 struct User
 {
     QString username;

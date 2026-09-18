@@ -23,6 +23,7 @@ void EmptyStateLabel::setMessage(const QString &message)
     setText(message);
 }
 
+// 空态判定基于“可见行数”而非行数：筛选会隐藏行，仅当所有行都被隐藏才显示占位
 void EmptyStateLabel::refresh()
 {
     int visible = 0;
@@ -38,6 +39,7 @@ void EmptyStateLabel::refresh()
     }
 }
 
+// 视口不参与布局，普通布局无法让标签跟随缩放，须监听视口 Resize 手动同步几何
 bool EmptyStateLabel::eventFilter(QObject *obj, QEvent *event)
 {
     if (obj == m_table->viewport() && event->type() == QEvent::Resize)

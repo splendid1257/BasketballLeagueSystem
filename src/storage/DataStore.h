@@ -67,6 +67,7 @@ public:
     User findUser(const QString &username) const;
 
 signals:
+    // 任意写操作成功后统一发射，UI 各页监听并重拉数据，实现跨页联动刷新
     void changed();
 
 private:
@@ -77,6 +78,7 @@ private:
     void seedDemoData();
     void ensureDataDir();
 
+    // 内存镜像：所有增删改先作用于容器，再整体落盘；save() 全量重写四张表
     QVector<Player> m_players;
     QVector<Match> m_matches;
     QVector<Team> m_teams;

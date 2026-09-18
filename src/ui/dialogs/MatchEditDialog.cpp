@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+// 新建与编辑共用：创建时字段留空（仅预设默认值），编辑时由 setMatch 预填
 MatchEditDialog::MatchEditDialog(const QStringList &teams, QWidget *parent)
     : QDialog(parent)
 {
@@ -38,12 +39,14 @@ MatchEditDialog::MatchEditDialog(const QStringList &teams, QWidget *parent)
     m_loc = new QLineEdit(this);
     m_loc->setPlaceholderText(QStringLiteral("比赛地点"));
 
+    // 球队可下拉也可直接输入，允许先建场次再补球队
     m_team1 = new QComboBox(this);
     m_team1->setEditable(true);
     m_team1->addItems(teams);
     m_team2 = new QComboBox(this);
     m_team2->setEditable(true);
     m_team2->addItems(teams);
+    // 默认两队取列表前两项，减少重复选择
     if (teams.size() > 1)
         m_team2->setCurrentIndex(1);
 
@@ -64,6 +67,7 @@ MatchEditDialog::MatchEditDialog(const QStringList &teams, QWidget *parent)
     root->addWidget(buttons);
 }
 
+// 预填已有场次字段；球队若不在下拉列表则改用可编辑文本，兼容自由输入
 void MatchEditDialog::setMatch(const Match &m)
 {
     m_id->setText(m.id);
@@ -80,12 +84,14 @@ void MatchEditDialog::setMatch(const Match &m)
     selectOrEdit(m_team1, m.team1Name);
     selectOrEdit(m_team2, m.team2Name);
 
+    // 拷贝名单而非重建，保证编辑场次信息后球员数据不丢失
     m_team1Players = m.team1Players;
     m_team2Players = m.team2Players;
     if (m_titleLabel)
         m_titleLabel->setText(QStringLiteral("编辑场次"));
 }
 
+// 从控件拼装 Match 并原样带回名单；对话框自身不写库
 Match MatchEditDialog::match() const
 {
     Match m;
@@ -99,6 +105,7 @@ Match MatchEditDialog::match() const
     return m;
 }
 
+// 编号、两队名称均为必填，且两队不得同名（避免自赛与记分歧义）
 void MatchEditDialog::accept()
 {
     if (m_id->text().trimmed().isEmpty()) {

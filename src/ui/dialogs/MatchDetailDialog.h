@@ -7,6 +7,8 @@ class QTableWidget;
 class QLabel;
 class QWidget;
 
+// 场次详情：展示两队名单并支持增删球员、编辑数据与场次信息；
+// 所有改动经 DataStore 落盘，本类仅编排 UI 与校验
 class MatchDetailDialog : public QDialog
 {
     Q_OBJECT
@@ -15,7 +17,7 @@ public:
     MatchDetailDialog(DataStore *store, const QString &matchId, QWidget *parent = nullptr);
 
 private:
-    QWidget *buildTeamPanel(int teamNo, QTableWidget *&table);
+    QWidget *buildTeamPanel(int teamNo, QTableWidget *&table);  // table 经引用回传
     void reload();
     void editMatchInfo();
     void addPlayer(int teamNo);
@@ -31,6 +33,7 @@ private:
     QTableWidget *m_table2 = nullptr;
     QLabel *m_team1Label = nullptr;
     QLabel *m_team2Label = nullptr;
+    // 缓存队名供 AddPlayerToMatchDialog 复用，随 reload 刷新
     QString m_team1Name;
     QString m_team2Name;
 };

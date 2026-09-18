@@ -8,6 +8,7 @@
 #include <QTableWidget>
 #include <QVBoxLayout>
 
+// 组装榜单下拉框与数据表格，切换榜单或底层数据变更均触发整表重建
 StatsPage::StatsPage(DataStore *store, QWidget *parent)
     : QWidget(parent)
     , m_store(store)
@@ -55,6 +56,7 @@ StatsPage::StatsPage(DataStore *store, QWidget *parent)
     refresh();
 }
 
+// 榜单枚举以 itemData 形式存放在下拉项中，取值时从当前项取回
 DataStore::Board StatsPage::currentBoard() const
 {
     return static_cast<DataStore::Board>(m_board->currentData().toInt());
@@ -65,6 +67,7 @@ void StatsPage::refresh()
     reload();
 }
 
+// 按当前榜单重建表格：排序键为对应生涯合计值并降序；并列时由 leaderboard 按球员 id 升序兜底
 void StatsPage::reload()
 {
     const DataStore::Board board = currentBoard();
@@ -78,12 +81,14 @@ void StatsPage::reload()
     }
     m_subtitle->setText(unit + QStringLiteral(" · 按降序排列"));
 
+    // leaderboard 包含所有注册球员（含数值为 0 者），缺省字段以 “-” 占位
     const auto rows = m_store->leaderboard(board);
     ui::beginTableFill(m_table);
     m_table->setRowCount(rows.size());
     for (int r = 0; r < rows.size(); ++r) {
         const Player p = m_store->findPlayer(rows.at(r).first);
         const int games = m_store->playerGameCount(p.id);
+        // 名次配色：第 1 金、前 3 绿、其余灰
         const QColor medal = (r == 0) ? ui::gold() : (r < 3 ? ui::green() : ui::dim());
 
         m_table->setItem(r, 0, ui::item(QString::number(r + 1), Qt::AlignCenter, medal));

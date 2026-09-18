@@ -31,6 +31,7 @@ private:
     QComboBox *m_team2 = nullptr;
     QLabel *m_titleLabel = nullptr;
 
+    // 缓存原有名单：本对话框不编辑球员，保存时需原样带回，避免编辑场次丢失数据
     QVector<PlayerStats> m_team1Players;
     QVector<PlayerStats> m_team2Players;
 };

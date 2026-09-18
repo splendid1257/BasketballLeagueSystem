@@ -11,6 +11,8 @@
 
 #include <algorithm>
 
+// 组装统计卡片与两张汇总表，并把数据变更信号接到 refresh()，
+// 使任何增删改操作后页面自动重绘
 DashboardPage::DashboardPage(DataStore *store, QWidget *parent)
     : QWidget(parent)
     , m_store(store)
@@ -69,6 +71,7 @@ DashboardPage::DashboardPage(DataStore *store, QWidget *parent)
 
 void DashboardPage::refresh()
 {
+    // 四张卡片均为派生数据（计数/合计），每次从 store 重算而非本地缓存，避免与底层脱节
     m_cardMatches->setValue(QString::number(m_store->matches().size()));
     m_cardMatches->setSubtitle(QStringLiteral("已完成/已录入"));
 
@@ -84,6 +87,7 @@ void DashboardPage::refresh()
     m_cardPoints->setSubtitle(QStringLiteral("全部场次合计"));
 
     QVector<Match> matches = m_store->matches();
+    // 近期比赛按开赛时间倒序取最近 6 场，不依赖 store 的原始存储顺序
     std::sort(matches.begin(), matches.end(), [](const Match &a, const Match &b) {
         return a.dateTime > b.dateTime;
     });
@@ -101,6 +105,7 @@ void DashboardPage::refresh()
     }
     ui::endTableFill(m_recent, {1});
 
+    // 得分榜仅取前 5；名次配色按奖牌档位（第 1 金、前 3 绿、其余灰）
     const auto board = m_store->leaderboard(DataStore::Board::Points);
     const int topN = qMin(5, board.size());
     ui::beginTableFill(m_topScorers);

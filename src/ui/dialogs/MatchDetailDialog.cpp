@@ -20,6 +20,7 @@
 
 namespace {
 
+// 构建只读统计表：禁编辑、整行单选；“姓名”列拉伸填充剩余宽度
 QTableWidget *makeStatsTable(QWidget *parent)
 {
     auto *table = new QTableWidget(parent);
@@ -40,6 +41,7 @@ QTableWidget *makeStatsTable(QWidget *parent)
     return table;
 }
 
+// 以列表整体重绘表格；endTableFill 传 {1} 令“姓名”列保持拉伸
 void fillStatsTable(QTableWidget *table, const QVector<PlayerStats> &list)
 {
     ui::beginTableFill(table);
@@ -57,6 +59,7 @@ void fillStatsTable(QTableWidget *table, const QVector<PlayerStats> &list)
         set(3, QString::number(s.rebounds));
         set(4, QString::number(s.dunks));
         set(5, QString::number(s.steals));
+        // 得分由 points() 推导（三分×3+扣篮×2），非存储字段，单独着色突出总评
         auto *pts = new QTableWidgetItem(QString::number(s.points()));
         pts->setTextAlignment(Qt::AlignCenter);
         pts->setForeground(QColor(QStringLiteral("#FDB927")));
@@ -86,6 +89,7 @@ bool promptStats(QWidget *parent, const QString &who, PlayerStats &s)
     auto *rb = new QSpinBox(&dlg);
     auto *dk = new QSpinBox(&dlg);
     auto *st = new QSpinBox(&dlg);
+    // 单场单项统计上限 200，约束非法输入
     for (QSpinBox *sb : {tp, rb, dk, st})
         sb->setRange(0, 200);
     tp->setValue(s.threePointers);
@@ -117,6 +121,7 @@ bool promptStats(QWidget *parent, const QString &who, PlayerStats &s)
 
 }  // namespace
 
+// 连接 changed 信号自动重载，保证外部改动后两侧名单与详情保持一致
 MatchDetailDialog::MatchDetailDialog(DataStore *store, const QString &matchId, QWidget *parent)
     : QDialog(parent)
     , m_store(store)
@@ -169,6 +174,7 @@ MatchDetailDialog::MatchDetailDialog(DataStore *store, const QString &matchId, Q
     reload();
 }
 
+// 构建单队面板，经引用参数回传其表格；增/删/编按钮按 teamNo 路由
 QWidget *MatchDetailDialog::buildTeamPanel(int teamNo, QTableWidget *&table)
 {
     auto *card = new QFrame(this);
@@ -206,6 +212,7 @@ QWidget *MatchDetailDialog::buildTeamPanel(int teamNo, QTableWidget *&table)
     return card;
 }
 
+// 以 DataStore 为唯一数据源整体重读重绘，避免本地缓存与持久层脱节
 void MatchDetailDialog::reload()
 {
     const Match m = m_store->findMatch(m_matchId);
@@ -228,6 +235,7 @@ void MatchDetailDialog::reload()
     fillStatsTable(m_table2, m.team2Players);
 }
 
+// 编辑场次信息：编号可改，改后校验唯一性并同步 m_matchId 以继续检索
 void MatchDetailDialog::editMatchInfo()
 {
     MatchEditDialog dlg(m_store->teams(), this);
@@ -236,6 +244,7 @@ void MatchDetailDialog::editMatchInfo()
         return;
 
     const Match m = dlg.match();
+    // 编号被改且新编号已被占用时拒绝保存
     if (m.id != m_matchId && m_store->matchExists(m.id)) {
         QMessageBox::warning(this, QStringLiteral("提示"),
                              QStringLiteral("场次编号 %1 已存在").arg(m.id));
@@ -250,6 +259,7 @@ void MatchDetailDialog::editMatchInfo()
     reload();
 }
 
+// 候选剔除已在任一队注册的球员，杜绝同一球员重复报名
 void MatchDetailDialog::addPlayer(int teamNo)
 {
     const Match m = m_store->findMatch(m_matchId);
@@ -275,6 +285,7 @@ void MatchDetailDialog::addPlayer(int teamNo)
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("添加失败：该球员已在本场次中"));
 }
 
+// 未选中行（currentRow 为 -1）先提示，防止误删
 void MatchDetailDialog::removePlayer(int teamNo)
 {
     QTableWidget *table = (teamNo == 1) ? m_table1 : m_table2;
@@ -292,6 +303,7 @@ void MatchDetailDialog::removePlayer(int teamNo)
     m_store->removePlayerFromMatch(m_matchId, teamNo, playerId);
 }
 
+// 从表格单元格回读当前数据再弹出编辑框，仅“三分/篮板/扣篮/抢断”可改
 void MatchDetailDialog::editStats(int teamNo)
 {
     QTableWidget *table = (teamNo == 1) ? m_table1 : m_table2;

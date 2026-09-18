@@ -55,10 +55,12 @@ MatchesPage::MatchesPage(DataStore *store, QWidget *parent)
                              QStringLiteral("球队二"), QStringLiteral("比分"),
                              QStringLiteral("胜者")});
     ui::autoSizeColumns(m_table, {2, 3, 4});
+    // 文本列（地点、球队、胜者）左对齐，编号/时间/比分列居中
     for (int c = 0; c < m_table->columnCount(); ++c)
         ui::alignHeader(m_table, c, (c == 2 || c == 3 || c == 4 || c == 6) ? Qt::AlignLeft : Qt::AlignCenter);
     root->addWidget(m_table, 1);
 
+    // 空态提示覆盖在表格之上，仅在结果集为空时可见
     m_empty = new EmptyStateLabel(m_table, this);
 
     connect(addBtn, &QPushButton::clicked, this, &MatchesPage::onAdd);
@@ -67,14 +69,17 @@ MatchesPage::MatchesPage(DataStore *store, QWidget *parent)
     connect(detailBtn, &QPushButton::clicked, this, &MatchesPage::onDetail);
     connect(m_table, &QTableWidget::doubleClicked, this, &MatchesPage::onDetail);
     connect(m_search, &QLineEdit::textChanged, this, &MatchesPage::applyFilter);
+    // 所有写操作结束后 DataStore 发出 changed，借此统一刷新，无需手动重绘
     connect(m_store, &DataStore::changed, this, &MatchesPage::refresh);
 
     refresh();
 }
 
+// 按数据源全量重建表格并重新套用过滤；行号即 m_store->matches() 的下标
 void MatchesPage::refresh()
 {
     const auto &matches = m_store->matches();
+    // 批量填充期间关闭逐格自适应列宽，结束后统一 resize，避免大表格卡顿
     ui::beginTableFill(m_table);
     m_table->setRowCount(matches.size());
     for (int r = 0; r < matches.size(); ++r) {
@@ -91,6 +96,7 @@ void MatchesPage::refresh()
     applyFilter();
 }
 
+// 逐行匹配任意单元格文本，命中才显示；隐藏行而非删除，避免改变行与数据的对应
 void MatchesPage::applyFilter()
 {
     const QString key = m_search->text().trimmed();
@@ -111,6 +117,7 @@ void MatchesPage::applyFilter()
     }
 }
 
+// 返回选中行第 0 列的编号；行号会随过滤漂移，故以 id 而非行号定位数据
 QString MatchesPage::selectedMatchId() const
 {
     const int row = m_table->currentRow();
@@ -119,6 +126,7 @@ QString MatchesPage::selectedMatchId() const
     return m_table->item(row, 0)->text();
 }
 
+// 弹窗录入新场次；编号重复时提示并放弃，成功写库后由 changed 信号触发刷新
 void MatchesPage::onAdd()
 {
     MatchEditDialog dlg(m_store->teams(), this);
@@ -134,6 +142,7 @@ void MatchesPage::onAdd()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("新增失败"));
 }
 
+// 编辑后编号若被改动，需按新编号复查唯一性，避免与既有场次冲突
 void MatchesPage::onEdit()
 {
     const QString id = selectedMatchId();
@@ -155,6 +164,7 @@ void MatchesPage::onEdit()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
 }
 
+// 删除前二次确认（不可恢复）；确认后直接删库，界面由 changed 信号刷新
 void MatchesPage::onDelete()
 {
     const QString id = selectedMatchId();
@@ -169,6 +179,7 @@ void MatchesPage::onDelete()
     m_store->removeMatch(id);
 }
 
+// 不直接打开详情，而是发信号交由主窗口导航，保持页面与窗口解耦
 void MatchesPage::onDetail()
 {
     const QString id = selectedMatchId();

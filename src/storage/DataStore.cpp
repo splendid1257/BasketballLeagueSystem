@@ -12,6 +12,8 @@
 
 namespace {
 
+// 球员在单场比赛的技术统计随 Match 冗余内嵌，而非挂在 Player 上：
+// 一场数据是历史快照，球员档案后续变更不应回溯改写它
 QJsonObject statsToJson(const PlayerStats &s)
 {
     QJsonObject o;
@@ -52,6 +54,7 @@ QVector<PlayerStats> statsArrayFromJson(const QJsonArray &arr)
     return list;
 }
 
+// 整表以顶层 JSON 数组全量落盘，缩进便于人工查看；失败返回 false 交由调用方中断
 bool writeJsonArray(const QString &path, const QJsonArray &arr)
 {
     QFile f(path);
@@ -62,6 +65,7 @@ bool writeJsonArray(const QString &path, const QJsonArray &arr)
     return true;
 }
 
+// 文件缺失或顶层非数组时返回空数组，调用方按空表兜底，不区分“文件不存在”与“内容损坏”
 QJsonArray readJsonArray(const QString &path)
 {
     QFile f(path);
@@ -92,6 +96,7 @@ DataStore::DataStore(QObject *parent)
     ensureDataDir();
 }
 
+// 数据目录与四个 JSON 文件路径在构造阶段一次确定，运行期保持不变
 void DataStore::ensureDataDir()
 {
     m_dataDir = QCoreApplication::applicationDirPath() + QStringLiteral("/data");
@@ -102,6 +107,8 @@ void DataStore::ensureDataDir()
     m_usersFile = m_dataDir + QStringLiteral("/users.json");
 }
 
+// 返回约定：各 load* 均以空表兜底文件缺失，故本函数恒返回 true；
+// 唯一副作用是首次运行播种演示数据（见下方 fresh 分支）
 bool DataStore::load()
 {
     ensureDataDir();
@@ -132,6 +139,7 @@ bool DataStore::load()
     return true;
 }
 
+// 四张表各自全量重写为一个 JSON 文件，无增量合并；返回值为四文件全部写成功的逻辑与
 bool DataStore::save() const
 {
     QJsonArray playersArr;
@@ -153,6 +161,7 @@ bool DataStore::save() const
     for (const Match &m : m_matches) {
         QJsonObject o;
         o["id"] = m.id;
+        // 比赛时间以 ISO 8601 字符串落盘，避免本地时区与格式差异
         o["dateTime"] = m.dateTime.toString(Qt::ISODate);
         o["location"] = m.location;
         o["team1Name"] = m.team1Name;
@@ -181,12 +190,14 @@ bool DataStore::save() const
         usersArr.append(o);
     }
 
+    // 短路与：任一文件写入失败即整体失败，已成功写入的前序文件不回滚
     return writeJsonArray(m_playersFile, playersArr)
            && writeJsonArray(m_matchesFile, matchesArr)
            && writeJsonArray(m_teamsFile, teamsArr)
            && writeJsonArray(m_usersFile, usersArr);
 }
 
+// 各表加载共用约定：文件缺失以空表兜底，行级校验失败（isValid 不通过）的脏数据被静默丢弃
 bool DataStore::loadPlayers()
 {
     m_players.clear();
@@ -274,6 +285,8 @@ bool DataStore::addPlayer(const Player &p)
     return true;
 }
 
+// 球员编号与姓名已冗余进每场 Match 的 PlayerStats；改名必须遍历全部场次同步，
+// 否则历史比赛仍残留旧编号/旧名，排行榜与出场记录会统计错归属
 bool DataStore::updatePlayer(const QString &oldId, const Player &p)
 {
     for (Player &existing : m_players) {
@@ -299,6 +312,7 @@ bool DataStore::updatePlayer(const QString &oldId, const Player &p)
     return false;
 }
 
+// 删除球员须级联清理其全部出场记录，否则 careerTotals 与排行榜仍会把已删除球员计入
 bool DataStore::removePlayer(const QString &id)
 {
     const auto it = std::find_if(m_players.begin(), m_players.end(),
@@ -328,6 +342,7 @@ Player DataStore::findPlayer(const QString &id) const
     return {};
 }
 
+// 球队名单取球队档案与球员所属队的并集：球员可能属于尚未建档的球队，故需两处合并再去重排序
 QStringList DataStore::teams() const
 {
     QStringList list;
@@ -361,6 +376,7 @@ bool DataStore::addTeam(const Team &t)
     return true;
 }
 
+// 队名三处冗余（球队档案、球员所属、历史比赛）；改名需三处同步以保持引用一致
 bool DataStore::updateTeam(const QString &oldName, const Team &t)
 {
     for (Team &existing : m_teams) {
@@ -386,6 +402,7 @@ bool DataStore::updateTeam(const QString &oldName, const Team &t)
     return false;
 }
 
+// 仅删除球队档案，不级联清理球员与比赛：球队名单仍可由球员所属队推导，历史比赛引用予以保留
 bool DataStore::removeTeam(const QString &name)
 {
     const auto it = std::find_if(m_teams.begin(), m_teams.end(),
@@ -457,6 +474,7 @@ Match DataStore::findMatch(const QString &id) const
     return {};
 }
 
+// 同一球员在同一场次同一队仅登记一次，按编号去重；teamNo 取值 1 或 2
 bool DataStore::addPlayerToMatch(const QString &matchId, int teamNo, const PlayerStats &s)
 {
     for (Match &m : m_matches) {
@@ -475,6 +493,7 @@ bool DataStore::addPlayerToMatch(const QString &matchId, int teamNo, const Playe
     return false;
 }
 
+// 以删除前后容器大小是否变化判断是否命中，未命中返回 false
 bool DataStore::removePlayerFromMatch(const QString &matchId, int teamNo, const QString &playerId)
 {
     for (Match &m : m_matches) {
@@ -494,6 +513,7 @@ bool DataStore::removePlayerFromMatch(const QString &matchId, int teamNo, const 
     return false;
 }
 
+// 整体替换该球员在该场的统计，而非按字段累加
 bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QString &playerId,
                                   const PlayerStats &s)
 {
@@ -514,6 +534,7 @@ bool DataStore::updatePlayerStats(const QString &matchId, int teamNo, const QStr
     return false;
 }
 
+// 聚合键为全局唯一球员编号而非姓名：重名不影响归属，编号变更已由 updatePlayer 同步修正
 PlayerStats DataStore::careerTotals(const QString &playerId) const
 {
     PlayerStats total;
@@ -565,6 +586,7 @@ QVector<QPair<QString, PlayerStats>> DataStore::playerMatchLog(const QString &pl
     return log;
 }
 
+// 榜单按数值降序；数值相同以编号升序保证同分排名稳定可复现
 QVector<QPair<QString, int>> DataStore::leaderboard(Board board) const
 {
     QVector<QPair<QString, int>> rows;
@@ -603,6 +625,7 @@ bool DataStore::userExists(const QString &username) const
                        [&username](const User &u) { return u.username == username; });
 }
 
+// 用户写入仅落盘、不发射 changed()：账号操作不涉及任何 UI 列表，无需触发页面刷新
 void DataStore::addUser(const User &u)
 {
     m_users.append(u);
@@ -617,6 +640,7 @@ User DataStore::findUser(const QString &username) const
     return {};
 }
 
+// 仅首次运行播种：四支球队、20 名球员与 6 场演示比赛，用于填充空库供界面展示
 void DataStore::seedDemoData()
 {
     const Team teams[] = {

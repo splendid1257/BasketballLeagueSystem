@@ -4,6 +4,7 @@
 
 class QTableWidget;
 
+// 空状态占位标签：覆盖表格视口，所有行被隐藏时居中显示提示文案
 class EmptyStateLabel : public QLabel
 {
     Q_OBJECT

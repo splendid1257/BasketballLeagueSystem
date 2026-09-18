@@ -20,6 +20,7 @@
 #include <QVBoxLayout>
 
 namespace {
+// 侧边栏按钮 id、堆叠页面索引、标题文案均按此枚举顺序一一对应，新增页面须三处同步
 enum PageIndex { Dashboard = 0, Matches = 1, Players = 2, Teams = 3, Stats = 4, PlayerDetail = 5 };
 }
 
@@ -45,6 +46,7 @@ MainWindow::MainWindow(DataStore *store, const QString &username, QWidget *paren
     rv->setSpacing(0);
     rv->addWidget(buildHeader());
 
+    // 六个页面一次性构造并常驻，导航仅切换索引，避免重建页面丢失状态
     m_stack = new QStackedWidget(right);
     m_dashboard = new DashboardPage(m_store, m_stack);
     m_matches = new MatchesPage(m_store, m_stack);
@@ -64,6 +66,7 @@ MainWindow::MainWindow(DataStore *store, const QString &username, QWidget *paren
     root->addWidget(right, 1);
     setCentralWidget(central);
 
+    // 各页面发出的跳转信号统一在此路由到窗口级导航处理
     connect(m_matches, &MatchesPage::matchDetailRequested, this, &MainWindow::showMatchDetail);
     connect(m_players, &PlayersPage::playerDetailRequested, this, &MainWindow::showPlayerDetail);
     connect(m_playerDetail, &PlayerDetailPage::backRequested, this, [this]() { navigate(Players); });
@@ -71,6 +74,7 @@ MainWindow::MainWindow(DataStore *store, const QString &username, QWidget *paren
     navigate(Dashboard);
 }
 
+// 构建左侧导航：品牌区 + 互斥导航按钮组 + 底部用户信息与退出按钮
 QWidget *MainWindow::buildSidebar()
 {
     auto *sidebar = new QFrame(this);
@@ -123,6 +127,7 @@ QWidget *MainWindow::buildSidebar()
     return sidebar;
 }
 
+// 生成可勾选的导航按钮并绑定到 navigate(index)；互斥由外层 QButtonGroup 保证
 QPushButton *MainWindow::makeNavButton(const QString &text, int index)
 {
     auto *btn = new QPushButton(text, this);
@@ -154,6 +159,7 @@ QWidget *MainWindow::buildHeader()
     return header;
 }
 
+// 切换登录态后同步刷新顶部栏与侧边栏底部两处用户名显示
 void MainWindow::setUser(const QString &username)
 {
     m_username = username;
@@ -163,6 +169,7 @@ void MainWindow::setUser(const QString &username)
         m_headerUser->setText(QStringLiteral("👤  %1").arg(username));
 }
 
+// 切换堆叠页索引并刷新目标页：页面常驻，进入时主动 refresh 以同步最新数据
 void MainWindow::navigate(int index)
 {
     m_stack->setCurrentIndex(index);
@@ -173,6 +180,7 @@ void MainWindow::navigate(int index)
     if (index >= 0 && index < titles.size())
         m_headerTitle->setText(titles.at(index));
 
+    // 球员详情页无独立导航按钮，进入时高亮“球员管理”以示归属
     if (index <= Stats && m_navGroup->button(index))
         m_navGroup->button(index)->setChecked(true);
     else if (index == PlayerDetail && m_navGroup->button(Players))
@@ -189,6 +197,7 @@ void MainWindow::navigate(int index)
     }
 }
 
+// 模态展示场次详情；关闭后刷新场次列表以反映对话框内可能的编辑
 void MainWindow::showMatchDetail(const QString &matchId)
 {
     MatchDetailDialog dlg(m_store, matchId, this);
@@ -196,6 +205,7 @@ void MainWindow::showMatchDetail(const QString &matchId)
     m_matches->refresh();
 }
 
+// 先向详情页注入目标球员再导航，确保标题与内容取自同一球员
 void MainWindow::showPlayerDetail(const QString &playerId)
 {
     m_playerDetail->setPlayer(playerId);
@@ -203,6 +213,7 @@ void MainWindow::showPlayerDetail(const QString &playerId)
     navigate(PlayerDetail);
 }
 
+// quitOnLastWindowClosed 已置 false，关闭主窗口时必须显式退出进程
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     QMainWindow::closeEvent(event);

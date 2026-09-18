@@ -10,6 +10,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
+// 登录/注册两张表单放进同一 QStackedWidget，初始显示登录页并聚焦用户名输入
 LoginDialog::LoginDialog(AuthManager *auth, QWidget *parent)
     : QDialog(parent)
     , m_auth(auth)
@@ -28,6 +29,7 @@ LoginDialog::LoginDialog(AuthManager *auth, QWidget *parent)
     auto *rv = new QVBoxLayout(right);
     rv->setContentsMargins(48, 40, 48, 40);
 
+    // 索引 0 为登录页、1 为注册页，两侧按钮通过 setCurrentIndex 互切
     m_stack = new QStackedWidget(right);
     m_stack->addWidget(buildLoginForm());
     m_stack->addWidget(buildRegisterForm());
@@ -39,6 +41,7 @@ LoginDialog::LoginDialog(AuthManager *auth, QWidget *parent)
     m_loginUser->setFocus();
 }
 
+// 左侧品牌装饰面板：纯静态元素，不参与任何交互逻辑
 QWidget *LoginDialog::buildBrandPanel()
 {
     auto *panel = new QFrame(this);
@@ -77,6 +80,7 @@ QWidget *LoginDialog::buildBrandPanel()
     return panel;
 }
 
+// 登录表单：登录按钮与两个输入框的回车均触发 doLogin，底部链接切到注册页
 QWidget *LoginDialog::buildLoginForm()
 {
     auto *page = new QWidget(this);
@@ -121,6 +125,7 @@ QWidget *LoginDialog::buildLoginForm()
     connect(loginBtn, &QPushButton::clicked, this, &LoginDialog::doLogin);
     connect(m_loginPass, &QLineEdit::returnPressed, this, &LoginDialog::doLogin);
     connect(m_loginUser, &QLineEdit::returnPressed, this, &LoginDialog::doLogin);
+    // 切到注册页后立即跑一次校验，避免残留上次的错误提示
     connect(toReg, &QPushButton::clicked, this, [this]() {
         m_stack->setCurrentIndex(1);
         validateRegister();
@@ -128,6 +133,7 @@ QWidget *LoginDialog::buildLoginForm()
     return page;
 }
 
+// 注册表单：三个输入框的 textChanged 均挂实时校验，逐项提示不合法之处
 QWidget *LoginDialog::buildRegisterForm()
 {
     auto *page = new QWidget(this);
@@ -188,6 +194,7 @@ QWidget *LoginDialog::buildRegisterForm()
     return page;
 }
 
+// 交由 AuthManager 认证；失败时把 error 出参文本直接显示到行内提示标签
 void LoginDialog::doLogin()
 {
     m_loginError->clear();
@@ -200,6 +207,7 @@ void LoginDialog::doLogin()
     }
 }
 
+// 先做本地校验，通过后再交给 AuthManager 落库；成功后携带用户名 accept
 void LoginDialog::doRegister()
 {
     if (!validateRegister()) {
@@ -212,6 +220,7 @@ void LoginDialog::doRegister()
         m_username = m_regUser->text().trimmed();
         accept();
     } else {
+        // 校验通过时标签已变绿，此处先还原红色再展示后端错误
         m_regError->setStyleSheet(QStringLiteral("color:#FF6B7A;"));
         m_regError->setText(error);
     }

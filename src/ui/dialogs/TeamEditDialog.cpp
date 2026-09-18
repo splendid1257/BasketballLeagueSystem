@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+// 新建与编辑共用：创建时字段留空，编辑时由 setTeam 预填
 TeamEditDialog::TeamEditDialog(QWidget *parent)
     : QDialog(parent)
 {
@@ -53,6 +54,7 @@ TeamEditDialog::TeamEditDialog(QWidget *parent)
     root->addWidget(buttons);
 }
 
+// 预填已有球队字段并切换标题为“编辑球队”
 void TeamEditDialog::setTeam(const Team &t)
 {
     m_name->setText(t.name);
@@ -63,6 +65,7 @@ void TeamEditDialog::setTeam(const Team &t)
         m_titleLabel->setText(QStringLiteral("编辑球队"));
 }
 
+// 从控件拼装 Team；仅名称必填，其余可为空
 Team TeamEditDialog::team() const
 {
     Team t;
@@ -73,6 +76,7 @@ Team TeamEditDialog::team() const
     return t;
 }
 
+// 名称必填，作为球队主键不可为空
 void TeamEditDialog::accept()
 {
     if (m_name->text().trimmed().isEmpty()) {

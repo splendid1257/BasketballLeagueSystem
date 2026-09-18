@@ -10,6 +10,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+// 新建与编辑共用：创建时字段为空白或默认值，编辑时由 setPlayer 预填
 PlayerEditDialog::PlayerEditDialog(const QStringList &teams, QWidget *parent)
     : QDialog(parent)
 {
@@ -38,12 +39,15 @@ PlayerEditDialog::PlayerEditDialog(const QStringList &teams, QWidget *parent)
     m_team = new QComboBox(this);
     m_team->setEditable(true);
     m_team->addItems(teams);
+    // 球衣号码限 0–99（NBA 惯例），0 表示未分配
     m_number = new QSpinBox(this);
     m_number->setRange(0, 99);
     m_position = new QComboBox(this);
+    // 位置既可下拉选预设，也可直接输入，故设为可编辑
     m_position->setEditable(true);
     m_position->addItems({QStringLiteral("PG"), QStringLiteral("SG"), QStringLiteral("SF"),
                           QStringLiteral("PF"), QStringLiteral("C")});
+    // 年龄/身高/体重给合理区间与默认值，减少创建时的填写负担
     m_age = new QSpinBox(this);
     m_age->setRange(10, 80);
     m_age->setValue(20);
@@ -79,6 +83,7 @@ PlayerEditDialog::PlayerEditDialog(const QStringList &teams, QWidget *parent)
     root->addWidget(buttons);
 }
 
+// 预填已有球员字段；球队/位置不在预设列表时退回可编辑文本
 void PlayerEditDialog::setPlayer(const Player &p)
 {
     m_id->setText(p.id);
@@ -95,6 +100,7 @@ void PlayerEditDialog::setPlayer(const Player &p)
         m_position->setCurrentIndex(posIdx);
     else
         m_position->setEditText(p.position);
+    // 历史数据可能缺身高体重，0 值回退到默认，避免超出 SpinBox 范围
     m_height->setValue(p.heightCm > 0 ? p.heightCm : 195);
     m_weight->setValue(p.weightKg > 0 ? p.weightKg : 90);
     m_country->setText(p.country);
@@ -102,6 +108,7 @@ void PlayerEditDialog::setPlayer(const Player &p)
         m_titleLabel->setText(QStringLiteral("编辑球员"));
 }
 
+// 从控件拼装 Player 并统一 trim 去首尾空白，避免脏字符进入存储
 Player PlayerEditDialog::player() const
 {
     Player p;
@@ -117,6 +124,7 @@ Player PlayerEditDialog::player() const
     return p;
 }
 
+// 编号与姓名为必填项，其余字段由控件默认值兜底
 void PlayerEditDialog::accept()
 {
     if (m_id->text().trimmed().isEmpty()) {

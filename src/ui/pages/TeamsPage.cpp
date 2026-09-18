@@ -29,6 +29,7 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     root->addWidget(title);
     root->addWidget(sub);
 
+    // 左右两栏：左栏固定宽度放球队列表，右栏自适应展示当前球队花名册
     auto *columns = new QHBoxLayout();
     columns->setSpacing(16);
 
@@ -103,11 +104,13 @@ TeamsPage::TeamsPage(DataStore *store, QWidget *parent)
     connect(addBtn, &QPushButton::clicked, this, &TeamsPage::onAddTeam);
     connect(editBtn, &QPushButton::clicked, this, &TeamsPage::onEditTeam);
     connect(delBtn, &QPushButton::clicked, this, &TeamsPage::onDeleteTeam);
+    // 数据源变化即重建左侧球队列表，并尽量恢复原选中球队
     connect(m_store, &DataStore::changed, this, &TeamsPage::refresh);
 
     refresh();
 }
 
+// 重建球队列表并恢复选中：先用当前项文本做记号，清空重填后再找回原位置
 void TeamsPage::refresh()
 {
     const QString previous = m_teamList->currentItem() ? m_teamList->currentItem()->text() : QString();
@@ -123,10 +126,12 @@ void TeamsPage::refresh()
                 .arg(team)
                 .arg(count)
                 .arg(count < 5 ? QStringLiteral("  ⚠") : QString()));
+        // 显示文本混入了人数与警示符号，故将纯队名另存到 UserRole 供后续取用
         it->setData(Qt::UserRole, team);
         m_teamList->addItem(it);
     }
 
+    // 无球队时的空态：清空花名册并提示创建
     if (m_teamList->count() == 0) {
         m_teamTitle->setText(QStringLiteral("花名册"));
         m_teamMeta->setText(QStringLiteral("暂无球队，点击左上角「＋ 新增球队」创建"));
@@ -134,6 +139,7 @@ void TeamsPage::refresh()
         return;
     }
 
+    // 在重建后的列表中找回原选中行，未命中则保留默认的第 0 行
     int row = 0;
     for (int i = 0; i < m_teamList->count(); ++i) {
         if (m_teamList->item(i)->data(Qt::UserRole).toString() == previous) {
@@ -145,6 +151,7 @@ void TeamsPage::refresh()
     onTeamSelected();
 }
 
+// 选中球队后聚合该队球员，计算生涯合计得分并渲染右侧花名册
 void TeamsPage::onTeamSelected()
 {
     auto *current = m_teamList->currentItem();
@@ -154,6 +161,7 @@ void TeamsPage::onTeamSelected()
     }
     const QString team = current->data(Qt::UserRole).toString();
 
+    // 按球队筛选花名册成员（球员与球队通过队名字符串关联，而非外键 id）
     QVector<Player> roster;
     for (const Player &p : m_store->players())
         if (p.team == team)
@@ -166,6 +174,7 @@ void TeamsPage::onTeamSelected()
         totalPoints += m_store->careerTotals(p.id).points();
 
     const Team info = m_store->findTeam(team);
+    // 仅拼接非空字段，避免出现无意义的空占位
     QStringList bits;
     if (!info.city.isEmpty())
         bits << QStringLiteral("城市 %1").arg(info.city);
@@ -175,6 +184,7 @@ void TeamsPage::onTeamSelected()
         bits << QStringLiteral("主场 %1").arg(info.arena);
     bits << QStringLiteral("共 %1 名球员").arg(roster.size());
     bits << QStringLiteral("生涯合计 %1 分").arg(totalPoints);
+    // 阵容不足 5 人时以警示色高亮元信息
     if (roster.size() < 5) {
         m_teamMeta->setStyleSheet(QStringLiteral("color:#FDB927;"));
         bits << QStringLiteral("⚠ 不足 5 人，建议补充至至少 5 人");
@@ -184,6 +194,7 @@ void TeamsPage::onTeamSelected()
     m_teamMeta->setText(bits.join(QStringLiteral(" · ")));
 
     m_roster->setRowCount(roster.size());
+    // 批量填充期间关闭逐格自适应列宽，结束后统一计算
     ui::beginTableFill(m_roster);
     for (int r = 0; r < roster.size(); ++r) {
         const Player &p = roster.at(r);
@@ -204,6 +215,7 @@ void TeamsPage::onTeamSelected()
     ui::endTableFill(m_roster, {1});
 }
 
+// 从右侧花名册取选中球员编号后编辑；编号改动时复查唯一性
 void TeamsPage::onEditPlayer()
 {
     const int row = m_roster->currentRow();
@@ -226,6 +238,7 @@ void TeamsPage::onEditPlayer()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
 }
 
+// 弹窗录入新球队；同名时放弃，成功写库后由 changed 信号刷新列表
 void TeamsPage::onAddTeam()
 {
     TeamEditDialog dlg(this);
@@ -258,6 +271,7 @@ void TeamsPage::onAddTeam()
     }
 }
 
+// 编辑球队；改名时按新名字复查唯一性
 void TeamsPage::onEditTeam()
 {
     auto *current = m_teamList->currentItem();
@@ -280,6 +294,7 @@ void TeamsPage::onEditTeam()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
 }
 
+// 删除前先查该队下是否仍有球员——有则拒绝删除，要求先改派或删除球员
 void TeamsPage::onDeleteTeam()
 {
     auto *current = m_teamList->currentItem();

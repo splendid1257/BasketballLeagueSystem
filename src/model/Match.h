@@ -4,6 +4,8 @@
 #include <QString>
 #include <QVector>
 
+// 一场比赛中单个球员的技术统计：归属 Match 而非 Player 档案，
+// playerId 为全局唯一 id，用于跨场次串联同一球员
 struct PlayerStats
 {
     QString playerId;
@@ -17,6 +19,8 @@ struct PlayerStats
     int points() const { return threePointers * 3 + dunks * 2; }
 };
 
+// 队名与 PlayerStats 内的姓名为冗余副本、专供显示，
+// 由 DataStore 在数据变更时级联同步保持一致
 class Match
 {
 public:

@@ -11,6 +11,8 @@
 #include <QTableWidget>
 #include <QVBoxLayout>
 
+// 组装头部信息、五张生涯统计卡与出场记录表，
+// 返回按钮与数据变更分别接入 backRequested 信号和 refresh()
 PlayerDetailPage::PlayerDetailPage(DataStore *store, QWidget *parent)
     : QWidget(parent)
     , m_store(store)
@@ -67,6 +69,7 @@ PlayerDetailPage::PlayerDetailPage(DataStore *store, QWidget *parent)
     connect(m_store, &DataStore::changed, this, &PlayerDetailPage::refresh);
 }
 
+// 切换当前展示的球员（以全局唯一 id 定位）并立即刷新视图
 void PlayerDetailPage::setPlayer(const QString &playerId)
 {
     m_playerId = playerId;
@@ -78,11 +81,14 @@ void PlayerDetailPage::refresh()
     if (m_playerId.isEmpty())
         return;
 
+    // 生涯合计由 careerTotals 按 playerId 汇总所有场次两队名单得出；
+    // 无出场记录时各项为 0、记录表为空，卡片仍显示 0 而非隐藏
     const Player p = m_store->findPlayer(m_playerId);
     m_playerName = p.name;
     const PlayerStats total = m_store->careerTotals(m_playerId);
     const int games = m_store->playerGameCount(m_playerId);
 
+    // 球员可能已被删除但历史记录仍引用其 id，此时 findPlayer 返回空字段，标题以占位符兜底
     m_name->setText(p.name.isEmpty() ? QStringLiteral("（已删除的球员）") : p.name);
     QStringList bits;
     bits << QStringLiteral("编号 %1").arg(p.id.isEmpty() ? QStringLiteral("-") : p.id);

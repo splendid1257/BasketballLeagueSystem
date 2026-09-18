@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
+// 左侧强调色条用固定宽度 QFrame + 行内样式表实现，仅左侧两角圆角
 StatCard::StatCard(const QString &title, const QString &accentColor, QWidget *parent)
     : QFrame(parent)
 {
@@ -41,6 +42,7 @@ StatCard::StatCard(const QString &title, const QString &accentColor, QWidget *pa
     root->addLayout(content, 1);
 }
 
+// 数值通过 setter 更新：内部 QLabel 保持私有，外部不得直接持有
 void StatCard::setValue(const QString &value)
 {
     m_value->setText(value);

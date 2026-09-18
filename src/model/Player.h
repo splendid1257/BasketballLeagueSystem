@@ -2,6 +2,7 @@
 
 #include <QString>
 
+// 球员档案；id 全局唯一，是关联单场统计 PlayerStats 的键
 struct Player
 {
     QString id;

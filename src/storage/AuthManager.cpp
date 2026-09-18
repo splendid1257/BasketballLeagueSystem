@@ -10,6 +10,8 @@ AuthManager::AuthManager(DataStore *store)
 {
 }
 
+// 16 字节随机数 hex 后得到 32 字符盐；盐的作用是让相同密码产生不同哈希，
+// 本身无需保密，故随用户记录明文持久化
 QString AuthManager::makeSalt()
 {
     QByteArray salt(16, '\0');
@@ -18,12 +20,16 @@ QString AuthManager::makeSalt()
     return QString::fromLatin1(salt.toHex());
 }
 
+// 拼接顺序 salt+password 在注册与登录处必须严格一致，颠倒则比对必然失败；
+// 明文密码只在此处参与一次哈希，从不落盘
 QString AuthManager::hashPassword(const QString &password, const QString &salt)
 {
     const QByteArray raw = (salt + password).toUtf8();
     return QString::fromLatin1(QCryptographicHash::hash(raw, QCryptographicHash::Sha256).toHex());
 }
 
+// 先逐项校验输入（长度、空格、字母数字组合），通过后生成盐与哈希并写入存储；
+// 明文密码仅存在于本次调用的参数中，落盘的只有 salt 与 passwordHash
 bool AuthManager::registerUser(const QString &username, const QString &password, QString *error)
 {
     const QString name = username.trimmed();
@@ -67,6 +73,7 @@ bool AuthManager::registerUser(const QString &username, const QString &password,
     return true;
 }
 
+// 用存储中该用户的盐对输入密码重算哈希并比对；查找失败以空 username 为哨兵判定用户不存在
 bool AuthManager::login(const QString &username, const QString &password, QString *error)
 {
     const QString name = username.trimmed();

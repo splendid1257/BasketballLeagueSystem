@@ -88,6 +88,7 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
     pager->addWidget(m_nextBtn);
     root->addLayout(pager);
 
+    // 空态提示覆盖在表格之上，仅在结果集为空时可见
     m_empty = new EmptyStateLabel(m_table, this);
 
     connect(addBtn, &QPushButton::clicked, this, &PlayersPage::onAdd);
@@ -100,17 +101,20 @@ PlayersPage::PlayersPage(DataStore *store, QWidget *parent)
             [this](int) { applyFilter(); });
     connect(m_positionFilter, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
             [this](int) { applyFilter(); });
+    // 上一页显式做下限保护；下一页不设上限，越界交给 renderPage 内的 qBound 钳制
     connect(m_prevBtn, &QPushButton::clicked, this, [this]() {
         if (m_page > 0) { --m_page; renderPage(); }
     });
     connect(m_nextBtn, &QPushButton::clicked, this, [this]() {
         ++m_page; renderPage();
     });
+    // 数据源变化即走 refresh：重建筛选并重绘当前页，分页也随之重置
     connect(m_store, &DataStore::changed, this, &PlayersPage::refresh);
 
     refresh();
 }
 
+// 重建两个筛选下拉的选项并尽量恢复原选中项；期间屏蔽信号以免触发多余的过滤
 void PlayersPage::rebuildFilters()
 {
     const QString prevTeam = m_teamFilter->currentData().toString();
@@ -146,12 +150,14 @@ void PlayersPage::rebuildFilters()
     m_positionFilter->blockSignals(false);
 }
 
+// 数据变化后的统一入口：先重建筛选项再套用过滤
 void PlayersPage::refresh()
 {
     rebuildFilters();
     applyFilter();
 }
 
+// 按关键词+球队+位置三重条件筛出内存候选集，并重置到第 0 页
 void PlayersPage::applyFilter()
 {
     const QString key = m_search->text().trimmed();
@@ -165,6 +171,7 @@ void PlayersPage::applyFilter()
         if (!pos.isEmpty() && p.position != pos)
             continue;
         if (!key.isEmpty()) {
+            // 多个字段拼成单一字符串后做不区分大小写的包含匹配
             const QString hay = QStringLiteral("%1 %2 %3 %4 %5 %6")
                                     .arg(p.id, p.name, p.team, p.position, p.country,
                                          QString::number(p.number));
@@ -177,9 +184,11 @@ void PlayersPage::applyFilter()
     renderPage();
 }
 
+// 按当前页从候选集切出一页渲染到表格，并更新计数与翻页按钮状态
 void PlayersPage::renderPage()
 {
     const int total = m_filtered.size();
+    // 向上取整求总页数，且至少 1 页，避免空结果时除零
     const int pageCount = qMax(1, (total + m_pageSize - 1) / m_pageSize);
     m_page = qBound(0, m_page, pageCount - 1);
 
@@ -187,6 +196,7 @@ void PlayersPage::renderPage()
     const int rows = qMin(m_pageSize, total - start);
 
     m_table->setRowCount(qMax(0, rows));
+    // 批量填充期间关闭逐格自适应列宽，结束后统一计算
     ui::beginTableFill(m_table);
     for (int i = 0; i < rows; ++i) {
         const Player &p = m_filtered.at(start + i);
@@ -196,6 +206,7 @@ void PlayersPage::renderPage()
         m_table->setItem(i, 0, ui::item(p.id, Qt::AlignCenter, ui::gold()));
         m_table->setItem(i, 1, ui::item(p.name, Qt::AlignLeft));
         m_table->setItem(i, 2, ui::item(p.team, Qt::AlignLeft, ui::dim()));
+        // 号码/身高/体重等为 0 或空视为未填写，统一显示「-」
         m_table->setItem(i, 3, ui::item(p.number > 0 ? QString::number(p.number) : QStringLiteral("-")));
         m_table->setItem(i, 4, ui::item(p.position.isEmpty() ? QStringLiteral("-") : p.position));
         m_table->setItem(i, 5, ui::item(QString::number(p.age)));
@@ -216,6 +227,7 @@ void PlayersPage::renderPage()
     m_nextBtn->setEnabled(m_page + 1 < pageCount);
 
     if (total == 0) {
+        // 区分「无数据」与「筛选后无结果」，给出不同的空态文案
         const bool filtered = !m_search->text().trimmed().isEmpty()
                               || !m_teamFilter->currentData().toString().isEmpty()
                               || !m_positionFilter->currentData().toString().isEmpty();
@@ -226,6 +238,7 @@ void PlayersPage::renderPage()
     m_empty->refresh();
 }
 
+// 返回选中行第 0 列的编号；行号随分页/过滤漂移，故以 id 而非行号定位数据
 QString PlayersPage::selectedPlayerId() const
 {
     const int row = m_table->currentRow();
@@ -234,6 +247,7 @@ QString PlayersPage::selectedPlayerId() const
     return m_table->item(row, 0)->text();
 }
 
+// 弹窗录入新球员；编号重复时放弃，成功写库后由 changed 信号刷新界面
 void PlayersPage::onAdd()
 {
     PlayerEditDialog dlg(m_store->teams(), this);
@@ -249,6 +263,7 @@ void PlayersPage::onAdd()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("新增失败"));
 }
 
+// 编辑后编号若被改动，需按新编号复查唯一性
 void PlayersPage::onEdit()
 {
     const QString id = selectedPlayerId();
@@ -270,6 +285,7 @@ void PlayersPage::onEdit()
         QMessageBox::warning(this, QStringLiteral("提示"), QStringLiteral("保存失败"));
 }
 
+// 删除前二次确认，并明确提示会连带移除该球员在所有场次中的数据
 void PlayersPage::onDelete()
 {
     const QString id = selectedPlayerId();
@@ -284,6 +300,7 @@ void PlayersPage::onDelete()
     m_store->removePlayer(id);
 }
 
+// 向上层发信号请求详情，导航职责留给主窗口
 void PlayersPage::onDetail()
 {
     const QString id = selectedPlayerId();

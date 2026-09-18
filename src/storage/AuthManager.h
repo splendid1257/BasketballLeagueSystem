@@ -14,6 +14,7 @@ public:
     bool registerUser(const QString &username, const QString &password, QString *error);
     bool login(const QString &username, const QString &password, QString *error);
 
+    // makeSalt 生成随机盐；hashPassword 按 salt+password 拼接后计算 SHA-256，拼接顺序不可颠倒
     static QString hashPassword(const QString &password, const QString &salt);
     static QString makeSalt();
 

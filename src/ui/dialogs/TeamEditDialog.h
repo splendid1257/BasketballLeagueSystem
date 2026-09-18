@@ -7,6 +7,7 @@
 class QLineEdit;
 class QLabel;
 
+// 球队新增/编辑对话框：录入并校验，经 team() 暴露结果，不落库
 class TeamEditDialog : public QDialog
 {
     Q_OBJECT
@@ -14,7 +15,7 @@ class TeamEditDialog : public QDialog
 public:
     explicit TeamEditDialog(QWidget *parent = nullptr);
 
-    void setTeam(const Team &t);
+    void setTeam(const Team &t);  // 编辑时预填
     Team team() const;
 
 protected:

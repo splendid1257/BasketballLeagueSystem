@@ -9,6 +9,7 @@ class QSpinBox;
 class QComboBox;
 class QLabel;
 
+// 球员新增/编辑对话框：录入并校验，经 player() 暴露结果，不落库
 class PlayerEditDialog : public QDialog
 {
     Q_OBJECT
@@ -16,7 +17,7 @@ class PlayerEditDialog : public QDialog
 public:
     explicit PlayerEditDialog(const QStringList &teams, QWidget *parent = nullptr);
 
-    void setPlayer(const Player &p);
+    void setPlayer(const Player &p);  // 编辑时预填
     Player player() const;
 
 protected:
